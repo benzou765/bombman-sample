@@ -43,10 +43,14 @@ func main() {
     r := room.NewRoom(e)
 
     // Route
-    e.Static("/", "./public")
+    // Test
     e.GET("/ping", func(c echo.Context) error {
         return c.String(http.StatusOK, "Hello, World!")
     })
+    // 静的ページ
+//    e.GET("/", controllers.IndexController.Get)
+    e.File("/", "public/index.html")
+    e.Static("/assets", "assets/bootstrap-3.4.1-dist")
     // websocket
     e.GET("/room/:user_id", r.Start)
     // database

@@ -1,13 +1,22 @@
 <html lang="ja">
     <head>
         <meta charset="utf-8">
-        <title>メニューページ</title>
-        <link href="" rel="stylesheet">
+        <title>爆弾マン？</title>
+        <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
     </head>
     <body>
-        <h1></h1>
-        ボンバーマンもどき<br>
-        <br>
-        ログインする<br>
+        <div class="container">
+            <div class="page-header">
+                <h1>爆弾マン？</h1>
+            </div>
+            <form>
+                <div class="form-group">
+                    <label for="InputId">ログインID</label>
+                    <input type="text" class="form-control" id="InputId" value="0">
+                    <p class="help-block">※初めての方は0を指定してください。</p>
+                </div>
+                <button type="submit" class="btn btn-default">ログイン</button>
+            </form>
+        </div>
     </body>
 </html>
