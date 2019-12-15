@@ -20,10 +20,23 @@ n*n -> (n-2) * ceil(n/2) + ceil(n/2) * (ceil(n/2)-1)
 | POST | /room/{id} |  | game.html | 部屋への移動 |
 | WS |  | {"id":0, "action":0, "x":0, "y":0} | {"id":0, "action":0, "x":0, "y":0} | ゲーム内アクション |
 
+## DB
+| テーブル名 | カラム |
+|---|---|
+| user | ID, created_at, updated_at |
+
+## Redis
+設定方法：https://qiita.com/momotaro98/items/ed496ba06908b278e103
+room_{ID} {}
+user_{ID} {}
+
+Redisで設計したデータはmongoDBにも持っていけそう？（要確認）
+
 ## スケール方法
 RedisのPub/Subを使う。割と一般的みたい
 * https://www.tetsis.com/blog/?p=632
 * https://qiita.com/mserizawa/items/31e94c25bc177dcbc2c9
+* https://medium.com/eureka-engineering/go-redis-application-28c8c793a652
 
 別の方法によるスケール
 * https://www.slideshare.net/kidach1/nodejs-54841327
