@@ -11,6 +11,15 @@ n*n -> (n-2) * ceil(n/2) + ceil(n/2) * (ceil(n/2)-1)
 最大ステージサイズ
 401 * 401
 
+## API
+| メソッド | URL | IN | OUT | 説明 |
+|---|---|---|---|---|
+| GET | / |  | index.html | ログイン画面 |
+| POST | /login | {"id": 1} | menu.html | ログイン処理しつつ、menu.htmlへ遷移 |
+| POST | /room/create |  | game.html | 部屋の作成、IDは自動発番 |
+| POST | /room/{id} |  | game.html | 部屋への移動 |
+| WS |  | {"id":0, "action":0, "x":0, "y":0} | {"id":0, "action":0, "x":0, "y":0} | ゲーム内アクション |
+
 ## スケール方法
 RedisのPub/Subを使う。割と一般的みたい
 * https://www.tetsis.com/blog/?p=632

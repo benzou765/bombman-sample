@@ -1,0 +1,14 @@
+{
+  "name": "main_game",
+  "version": "0.1.0",
+  "description": "bombman game",
+  "main": "game.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "pixi.js": "^5.2.0"
+  }
+}
