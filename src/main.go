@@ -11,14 +11,22 @@ import (
     "github.com/labstack/gommon/log"
 
     // local packages
-    "./controllers"
-    "./chat"
-    "./models"
 )
 
-func main() {
-    var addr = ":8080"
+func setRoute(e *echo.Echo) {
+    // Test
+    e.GET("/ping", func(c echo.Context) error {
+        return c.String(http.StatusOK, "Hello, World!")
+    })
+    // 静的ページ
+    e.File("/", "public/index.html")
+    e.Static("/assets", "assets/bootstrap-3.4.1-dist")
+    // database
+}
 
+func main() {
+    // Init echo
+    var addr = ":8080"
     e := echo.New()
 
     // App Log
@@ -36,31 +44,8 @@ func main() {
     }))
     e.Use(middleware.Recover())
 
-    // DBへの接続
-    models.ConnectionDB(e);
-
-    // チャット部屋の作成
-    r := room.NewRoom(e)
-
     // Route
-    // Test
-    e.GET("/ping", func(c echo.Context) error {
-        return c.String(http.StatusOK, "Hello, World!")
-    })
-    // 静的ページ
-//    e.GET("/", controllers.IndexController.Get)
-    e.File("/", "public/index.html")
-    e.Static("/assets", "assets/bootstrap-3.4.1-dist")
-    // websocket
-    e.GET("/room/:user_id", r.Start)
-    // database
-    e.POST("/user", controllers.InsertUser)
-    e.GET("/user/:id", controllers.SelectUser)
-    e.PUT("/user/:id", controllers.UpdateUser)
-    e.DELETE("/user/:id", controllers.DeleteUser)
-
-    // 部屋の監視
-    go r.Run()
+    setRoute(e)
 
     e.Logger.Info("start web")
     e.Logger.Fatal(e.Start(addr))

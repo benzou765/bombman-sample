@@ -7,16 +7,16 @@ services:
       - ./src:/app 
     ports:
       - 8080:8080
-  db:
-    image: mysql:5.7
-    ports:
-      - 3306:3306
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: mytable
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-      TZ: "Asia/Tokyo"
-    volumes:
-      - ./data:/var/lib/mysql
-      - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+#  db:
+#    image: mysql:5.7
+#    ports:
+#      - 3306:3306
+#    environment:
+#      MYSQL_ROOT_PASSWORD: root
+#      MYSQL_DATABASE: mytable
+#      MYSQL_USER: user
+#      MYSQL_PASSWORD: password
+#      TZ: "Asia/Tokyo"
+#    volumes:
+#      - ./data:/var/lib/mysql
+#      - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
