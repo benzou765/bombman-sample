@@ -43,11 +43,36 @@ RedisのPub/Subを使う。割と一般的みたい
 * https://www.atmarkit.co.jp/ait/articles/1010/20/news105.html
 * https://www.walksocket.com/archives/29
 
+### テスト
+wscatによるテスト
+* https://qiita.com/TakashiOshikawa/items/1483a334d54cb0f6ed78
 
-
-### 気づいたこと
+### サーバ構築で気づいたこと
 LoadBalancerとWebSocketの相性は悪い（LBはコネクションを確立するためだけに存在するので当たり前）。
 なので、コネクションを確立したあとは別サーバに接続するよう促し、通信させるのが良さそう
+
+### pixi.jsで気づいたこと
+npmでインストールした場合、webpackが必要っぽい。
+手順は公式サイトの通り。
+pixi 5.2.0の場合は下記のパッケージが必要
+```
+@babel/core
+@babel/preset-env
+babel-loader
+webpack
+webpack-cli
+webpack-dev-server
+copy-webpack-plugin (this one is for copying files from build/assets to dist/assets folder)
+html-webpack-plugin
+uglifyjs-webpack-plugin
+```
+pixiによるゲーム作成サイト
+* https://ryo620.org/2016/12/pixijs-game-01/
+素材サイト
+* https://pipoya.net/sozai/
+* http://yms.main.jp/
+webpack (今回は使用しないが、どこかで覚える必要はありそう)
+* https://qiita.com/koedamon/items/3e64612d22f3473f36a4
 
 # 実装中のメモ
 gorillaライブラリを使用してwebsocketを実装するとUnity経由でも動作
