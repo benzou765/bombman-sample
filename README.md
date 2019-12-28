@@ -74,6 +74,10 @@ pixiによるゲーム作成サイト
 webpack (今回は使用しないが、どこかで覚える必要はありそう)
 * https://qiita.com/koedamon/items/3e64612d22f3473f36a4
 
+### phaser環境の構築
+https://qiita.com/d2cd-ytakada/items/dd4a5bf20d3066bf8c3f
+https://magazine.halake.com/entry/phaser-ts-rpg-simple1?utm_source=feed
+
 # 実装中のメモ
 gorillaライブラリを使用してwebsocketを実装するとUnity経由でも動作
 golang は先頭が大文字か小文字かでprivateとpublicを使い分けている。
