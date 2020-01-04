@@ -1,21 +1,22 @@
 package controllers
 
 import (
-    "net/http"
+	"net/http"
 
-    // echo
-    "github.com/labstack/echo"
+	// echo
+	"github.com/labstack/echo"
 )
 
 // ログイン関連の構造体
 type UserId struct {
-    Id int `form:"id"`
+	Id int `form:"id"`
 }
 
 // POST /login
 func LoginPost(c echo.Context) error {
-    data := map[string]interface{} {
-        "Title": "爆弾マン？",
-    }
-    return c.Render(http.StatusOK, "menu", data)
+	//	data := map[string]interface{}{
+	//		"Title": "爆弾マン？",
+	//	}
+	return c.Redirect(http.StatusSeeOther, "/game")
+	//    return c.Render(http.StatusOK, "menu", data)
 }
