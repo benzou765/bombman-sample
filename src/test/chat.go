@@ -1,3 +1,4 @@
+/*
 package models
 
 import (
@@ -34,3 +35,4 @@ func SelectAll() []ChatLog {
 	}
 	return logs
 }
+*/

@@ -1,5 +1,10 @@
 FROM golang:1.12-alpine
 
+RUN apk add tzdata && \
+    cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && \
+    apk del tzdata && \
+    rm -rf /var/cache/apk/*
+
 RUN apk add --no-cache git
 RUN go get github.com/labstack/echo/...
 RUN go get github.com/labstack/gommon/log

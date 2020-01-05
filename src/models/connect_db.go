@@ -1,25 +1,36 @@
 package models
 
 import (
-    // echo
-    "github.com/labstack/echo"
+	// echo
+	"github.com/labstack/echo"
 
 	// database
-    _ "github.com/go-sql-driver/mysql"
-    "github.com/gocraft/dbr"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/gocraft/dbr"
 )
 
-var Conn *dbr.Connection
-var Session *dbr.Session
-var Logger echo.Logger
+//var Conn *dbr.Connection
+type DbConnection struct {
+	session *dbr.Session
+	echo    *echo.Echo
+}
 
-func ConnectionDB(e *echo.Echo) {
-	var err error
-	Logger = e.Logger
-//	e.Logger.Info("connect database")
-	Conn, err = dbr.Open("mysql", "root:root@tcp(db:3306)/mydb", nil)
+func NewConnection(e *echo.Echo) (dc *DbConnection) {
+	dc = &DbConnection{}
+	//	var err error
+	conn, err := dbr.Open("mysql", "root:root@tcp(db:3306)/mydb", nil)
 	if err != nil {
-		Logger.Error(err)
+		e.Logger.Error(err)
 	}
-	Session = Conn.NewSession(nil)
+	dc.echo = e
+	dc.session = conn.NewSession(nil)
+	return
+}
+
+func (dc *DbConnection) GetSession() *dbr.Session {
+	return dc.session
+}
+
+func (dc *DbConnection) GetEcho() *echo.Echo {
+	return dc.echo
 }

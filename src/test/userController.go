@@ -1,3 +1,4 @@
+/*
 package controllers
 
 import (
@@ -50,3 +51,4 @@ func DeleteUser(c echo.Context) error {
     user.Delete(id)
     return c.NoContent(http.StatusNoContent)
 }
+*/

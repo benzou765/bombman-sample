@@ -23,7 +23,14 @@ n*n -> (n-2) * ceil(n/2) + ceil(n/2) * (ceil(n/2)-1)
 ## DB
 | テーブル名 | カラム |
 |---|---|
-| user | ID, created_at, updated_at |
+| user | id, chara_id, created_at, updated_at |
+| room | id, members, created_at, updated_at |
+| log | id, room_id, user_id, action, created_at, updated_at |
+
+遅い場合は、下記テーブルを追加
+| テーブル名 | カラム |
+|---|---|
+| room_user | room_id, user_id, created_at |
 
 ## Redis
 設定方法：https://qiita.com/momotaro98/items/ed496ba06908b278e103

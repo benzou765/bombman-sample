@@ -13,12 +13,12 @@ services:
       - 3306:3306
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: mytable
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
+#      MYSQL_USER: user
+#      MYSQL_PASSWORD: password
       TZ: "Asia/Tokyo"
     volumes:
       - ./data:/var/lib/mysql
       - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+      - ./docker/mysql/init.d:/docker-entrypoint-initdb.d
 #  redis:
 #    image: redis:5.0-alpine
