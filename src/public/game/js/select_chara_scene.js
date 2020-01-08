@@ -35,7 +35,7 @@ let SelectCharaScene = new Phaser.Class ({
         this.menuSettings = [
             { key: "create", point: {x: 250, y: 298} },
             { key: "insert", point: {x: 250, y: 10} },
-        ]
+        ];
         // 操作変数群
         this.selectMenuNum = 0;
         this.selectCharaNum = 0;
