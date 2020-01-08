@@ -23,10 +23,7 @@ let CreateRoomScene = new Phaser.Class ({
     {
         console.log("create room scene init");
         // 前シーンからのデータ取得
-//        this.selectedCharaNum = data.chara_id;
-        // 
-        // debug
-        this.selectedCharaNum = 0;
+        this.selectedCharaNum = data.chara_id;
         // キーボード
         this.cursors = null;
         // 設定変数群
@@ -60,7 +57,7 @@ let CreateRoomScene = new Phaser.Class ({
      */
     preload: function() {
         console.log("create room scene preload");
-        let id = this.selectedCharaNum
+        let id = this.selectedCharaNum;
         this.load.spritesheet(this.bommerSettings[id].key, this.bommerSettings[id].path, { frameWidth:32, frameHeight: 32, startFrame: 0, endFrame: 11});
     },
     /**
