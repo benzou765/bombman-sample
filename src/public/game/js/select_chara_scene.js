@@ -128,13 +128,23 @@ let SelectCharaScene = new Phaser.Class ({
         // 部屋選択アイコン描画
         if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
             this.selectMenuIcon.setPosition(250, 298);
+            this.selectMenuNum = 0;
         } else if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
             this.selectMenuIcon.setPosition(250, 327);
+            this.selectMenuNum = 1;
         }
 
         // 決定処理
         if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
-            this.scene.start("createRoom", {"hoge": 1});
+            let sendData = { chara_id: this.selectCharaNum};
+            switch(this.selectMenuNum) {
+                case 0:
+                    this.scene.start("createRoom", sendData);
+                    break;
+                case 1:
+                    this.scene.start("selectRoom", sendData);
+                    break;
+            }
         }
 
         // アニメーションの描画
