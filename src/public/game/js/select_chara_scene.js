@@ -1,12 +1,26 @@
+'use strict'
+
 /**
  * キャラ選択画面
+ * @see https://photonstorm.github.io/phaser3-docs/Phaser.Scene.html
  */
 let SelectCharaScene = new Phaser.Class ({
     Extends: Phaser.Scene,
 
+    /**
+     * シーンのコンストラクタ。ゲーム起動時とともに1回だけ実行される。
+     * @param object config
+     */
     initialize: function SelectCharaScene(config) {
-        Phaser.Scene.call(this, config);
         console.log("select chara scene initialize");
+        Phaser.Scene.call(this, config); // 親クラスのコンストラクタの呼び出し
+    },
+    /**
+     * シーンの初期化。シーンの実行時（start）に実行される。パラメータの初期化、受け渡し等に使用。
+     * @param object data
+     */
+    init: function(data) {
+        console.log("select chara scene init");
         // キーボード
         this.cursors = null;
         // 設定変数群
@@ -32,6 +46,9 @@ let SelectCharaScene = new Phaser.Class ({
         this.bomb = null;
         this.bommers = [];
     },
+    /**
+     * シーンに使用するアセットの読み込み。シーン実行時に実行される
+     */
     preload: function() {
         console.log("select chara scene preload");
         // アセットのロード
@@ -40,7 +57,11 @@ let SelectCharaScene = new Phaser.Class ({
             this.load.spritesheet(this.bommerSettings[i].key, this.bommerSettings[i].path, { frameWidth: 32, frameHeight: 32, startFrame: 0, endFrame: 11});
         }
     },
-    create: function() {
+    /**
+     * シーンの作成。シーンの実行時に実行される。アセットの読み込み完了後に実行され、画面の構築等を行う。
+     * @param object data
+     */
+    create: function(data) {
         console.log("select chara scene create");
         // 背景色
         this.cameras.main.setBackgroundColor("#ecf4f3");
@@ -84,7 +105,12 @@ let SelectCharaScene = new Phaser.Class ({
         // キーボード設定の初期化
         this.cursors = this.input.keyboard.createCursorKeys();
     },
-    update: function() {
+    /**
+     * シーンの更新。毎フレーム実行される。
+     * @param number time
+     * @param number delta
+     */
+    update: function(time, delta) {
         // キャラ選択アイコン描画
         if (Phaser.Input.Keyboard.JustDown(this.cursors.left)) {
             if (0 < this.selectCharaNum && this.selectCharaNum < this.bommerSettings.length) {
@@ -104,6 +130,11 @@ let SelectCharaScene = new Phaser.Class ({
             this.selectMenuIcon.setPosition(250, 298);
         } else if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
             this.selectMenuIcon.setPosition(250, 327);
+        }
+
+        // 決定処理
+        if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
+            this.scene.start("createRoom", {"hoge": 1});
         }
 
         // アニメーションの描画
