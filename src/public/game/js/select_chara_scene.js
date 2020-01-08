@@ -4,7 +4,7 @@
 let SelectCharaScene = new Phaser.Class ({
     Extends: Phaser.Scene,
 
-    initialize: function SelectScene(config) {
+    initialize: function SelectCharaScene(config) {
         Phaser.Scene.call(this, config);
         // キーボード
         this.cursors = null;

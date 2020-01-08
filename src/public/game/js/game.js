@@ -54,6 +54,48 @@ let BattleScene = new Phaser.Class ({
     }
 });
 
+/**
+ * 部屋作成画面
+ */
+let CreateRoomScene = new Phaser.Class ({
+    Extends: Phaser.Scene,
+
+    initialize: function CreateRoomScene(config) {
+        Phaser.Scene.call(this, config);
+        console.log("create room scene initialize");
+    },
+    preload: function() {
+        console.log("create room scene preload");
+    },
+    create: function() {
+        console.log("create room scene create");
+    },
+    update: function() {
+
+    }
+});
+
+/**
+ * 部屋選択画面
+ */
+let SelectRoomScene = new Phaser.Class ({
+    Extends: Phaser.Scene,
+
+    initialize: function SelectRoomScene(config) {
+        Phaser.Scene.call(this, config);
+        console.log("select room scene initialize");
+    },
+    preload: function() {
+        console.log("select room scene preload");
+    },
+    create: function() {
+        console.log("select room scene create");
+    },
+    update: function() {
+
+    }
+});
+
 // main game
 let config = {
     type: Phaser.AUTO,
