@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 /**
  * キャラ選択画面

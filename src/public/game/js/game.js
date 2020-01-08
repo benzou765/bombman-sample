@@ -84,63 +84,6 @@ let BattleScene = new Phaser.Class ({
 });
 
 /**
- * 部屋作成画面
- * @see https://photonstorm.github.io/phaser3-docs/Phaser.Scene.html
- */
-let CreateRoomScene = new Phaser.Class ({
-    Extends: Phaser.Scene,
-
-    /**
-     * シーンのコンストラクタ。ゲーム起動時とともに1回だけ実行される。
-     * @param object config
-     */
-    initialize: function CreateRoomScene(config) {
-        console.log("create room scene initialize");
-        Phaser.Scene.call(this, config); // 親クラスのコンストラクタの呼び出し
-    },
-    /**
-     * シーンの初期化。シーンの実行時（start）に実行される。パラメータの初期化、受け渡し等に使用。
-     * @param object data
-     */
-    init: function(data)
-    {
-        console.log("create room scene init");
-        this.selectedCharaNum = 0;
-        this.bommerSettings = [
-            { key: "BommerA", path: "img/bommer_a.png", point: {x: 210, y: 220} },
-            { key: "BommerB", path: "img/bommer_b.png", point: {x: 252, y: 220} },
-            { key: "BommerC", path: "img/bommer_c.png", point: {x: 294, y: 220} },
-            { key: "BommerD", path: "img/bommer_d.png", point: {x: 336, y: 220} },
-            { key: "BommerE", path: "img/bommer_e.png", point: {x: 378, y: 220} },
-            { key: "BommerF", path: "img/bommer_f.png", point: {x: 420, y: 220} },
-        ];
-        this.bommer = null;
-        this.roomSizeNum = 1;
-    },
-    /**
-     * シーンに使用するアセットの読み込み。シーン実行時に実行される
-     */
-    preload: function() {
-        console.log("create room scene preload");
-    },
-    /**
-     * シーンの作成。シーンの実行時に実行される。アセットの読み込み完了後に実行され、画面の構築等を行う。
-     * @param object data
-     */
-    create: function(data) {
-        console.log("create room scene create");
-    },
-    /**
-     * シーンの更新。毎フレーム実行される。
-     * @param number time
-     * @param number delta
-     */
-    update: function(time, delta) {
-
-    }
-});
-
-/**
  * 部屋選択画面
  * @see https://photonstorm.github.io/phaser3-docs/Phaser.Scene.html
  */
@@ -192,7 +135,7 @@ let config = {
     height: 480,
 };
 let game = new Phaser.Game(config);
-game.scene.add('selectChara', SelectCharaScene, true);
+game.scene.add('selectChara', SelectCharaScene, false);
 game.scene.add('battle', BattleScene, false);
-game.scene.add('createRoom', CreateRoomScene, false);
+game.scene.add('createRoom', CreateRoomScene, true);
 game.scene.add('selectRoom', SelectRoomScene, false);
