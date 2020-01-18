@@ -139,9 +139,11 @@ let SelectCharaScene = new Phaser.Class ({
             let sendData = { chara_id: this.selectCharaNum};
             switch(this.selectMenuNum) {
                 case 0:
+                    this.scene.stop();
                     this.scene.start("createRoom", sendData);
                     break;
                 case 1:
+                    this.scene.stop();
                     this.scene.start("selectRoom", sendData);
                     break;
             }

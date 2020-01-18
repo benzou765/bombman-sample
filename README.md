@@ -75,8 +75,7 @@ copy-webpack-plugin (this one is for copying files from build/assets to dist/ass
 html-webpack-plugin
 uglifyjs-webpack-plugin
 ```
-pixiによるゲーム作成サイト
-* https://ryo620.org/2016/12/pixijs-game-01/
+
 素材サイト
 * https://pipoya.net/sozai/
 * http://yms.main.jp/
@@ -141,3 +140,14 @@ alter table chat_log add index room_idx(room_id);
 $ cd models
 $ go build -o models user.go
 ```
+
+# 使用ライブラリ
+## go
+
+## html etc
+Webページ整形のためのライブラリ bootstrap 3
+* 
+
+## js
+phaser3でui作成のためのライブラリ
+* https://github.com/rexrainbow/phaser3-rex-notes
