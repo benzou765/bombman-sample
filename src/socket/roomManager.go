@@ -1,10 +1,10 @@
-package room
+package socket
 
 import (
-    "strconv"
     "log"
     "encoding/json"
     "unsafe"
+    "strconv"
 
     // echo
     "github.com/labstack/echo"
@@ -16,7 +16,13 @@ import (
     "../models"
 )
 
-// チャットルーム構造体
+// 部屋管理の構造体
+type RoomManager struct {
+    rooms map[*Room]bool
+    logger echo.Logger
+}
+
+// 部屋の構造体
 type Room struct {
     id int
     // クライアントにメッセージを送信するために保持するチャネル
@@ -27,29 +33,48 @@ type Room struct {
     leave chan *Client
     // 在室しているクライアントを保持
     clients map[*Client]bool
+    // DB接続情報
+    dbConn *models.DbConnection
 }
 
 // 通信上のJson構造体
 type Talk struct {
-    User_id int `json:"user_id"`
-    Message string `json:"message"`
+    User_id int `json:"id"`
+    Action string `json:"action"`
+    X int `json:"x"`
+    Y int `json:"y"`
 }
 
-var Logger echo.Logger
+// websocketのメッセージバッファ
+var upgrader = &websocket.Upgrader {
+    ReadBufferSize: 1024,
+    WriteBufferSize: 1024,
+}
 
-func NewRoom(e *echo.Echo) *Room {
-    Logger = e.Logger
+// Roomを管理する構造体の初期化
+func New(e *echo.Echo) *RoomManager {
+    return &RoomManager {
+        rooms: make(map[*Room]bool),
+        logger: e.Logger,
+    }
+}
 
-    return &Room {
-        id: 1,
+func (rm *RoomManager) CreateRoom(c *echo.Context, conn *models.DbConnection) {
+    // 部屋情報をDBに保存
+    id := 1
+    room := &Room {
+        id: id,
         forward: make(chan []byte),
         join: make(chan *Client),
         leave: make(chan *Client),
         clients: make(map[*Client]bool),
+        dbConn: conn,
     }
+    rm.rooms[room] = true
+    room.Run()
 }
 
-// チャットルーム管理メソッド
+// ルーム内での処理
 func (r *Room) Run() {
     for {
         select {
@@ -57,14 +82,8 @@ func (r *Room) Run() {
             // 参加
             r.clients[client] = true
             // 入室情報の書き込み
-            chatLog := new(models.ChatLog)
-            Logger.Info("ID:", client.id, " user login")
-            chatLog.Insert(client.id, r.id, "[INFO]ユーザーが入室しました")
         case client := <- r.leave:
             // 退出情報の書き込み
-            chatLog := new(models.ChatLog)
-            Logger.Info("ID:", client.id, " user logout")
-            chatLog.Insert(client.id, r.id, "[INFO]ユーザーが退出しました")
             // 退出
             delete(r.clients, client)
             close(client.send)
@@ -74,11 +93,7 @@ func (r *Room) Run() {
             if err := json.Unmarshal(msg, &talk); err != nil {
                 log.Fatal(err)
             }
-            chatLog := new(models.ChatLog)
-            Logger.Info("ID:", talk.User_id, " user send message:", talk.Message)
-            chatLog.Insert(talk.User_id, r.id, talk.Message)
-            user := models.FindUser(talk.User_id);
-            retMsg := "{\"user_id\":" + strconv.Itoa(user.Id) + ", \"name\":\"" + user.Name + "\", \"icon\":\"" + user.Icon + "\", \"message\":\"" + talk.Message + "\"}"
+            retMsg := "{\"user_id\":" + strconv.Itoa(talk.User_id) + ", \"action\":\"" + talk.Action + "\", \"x\":\"" + strconv.Itoa(talk.X) + "\", \"y\":\"" + strconv.Itoa(talk.Y) + "\"}"
             byteMsg := *(*[]byte)(unsafe.Pointer(&retMsg))
 
             // すべてのクライアントにメッセージを送信
@@ -96,32 +111,13 @@ func (r *Room) Run() {
     }
 }
 
-const (
-    socketBufferSize = 1024
-    messageBufferSize = 256
-)
-
-var upgrader = &websocket.Upgrader {
-    ReadBufferSize: socketBufferSize,
-    WriteBufferSize: socketBufferSize,
-}
-
+// クライアントの退出
 func leaveClient(r *Room, c *Client) {
     r.leave <- c
 }
 
-func (r *Room) Start(c echo.Context) error {
-    Logger.Info("create room")
-    // ユーザーIDの読み取り
-    id, _ := strconv.Atoi(c.Param("user_id"))
-
-    // ユーザーの存在確認
-    user := models.FindUser(id)
-    if user == nil {
-        user = new(models.User)
-        user.Insert("nameless", "CowboyButton", r.id)
-    }
-
+// ルームの使用開始
+func (r *Room) EnterRoom(c echo.Context, userId int) error {
     // WebSocketの準備
     socket, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
     if err != nil {
@@ -129,9 +125,9 @@ func (r *Room) Start(c echo.Context) error {
     }
     client := &Client {
         socket: socket,
-        send: make(chan []byte, messageBufferSize),
+        send: make(chan []byte, 256),
         room: r,
-        id: user.Id,
+        id: userId,
     }
     r.join <- client
     defer func() { r.leave <- client }()

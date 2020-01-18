@@ -14,6 +14,7 @@ import (
 
 	// local packages
 	"./controllers"
+	"./models"
 )
 
 // htmlテンプレートを定義する構造体
@@ -38,6 +39,9 @@ func setRoute(e *echo.Echo) {
 	e.Static("/js", "public/game/js")
 	e.Static("/img", "public/game/img")
 	e.POST("/login", controllers.LoginPost)
+	e.POST("/room/create", controllers.CreateRoom)
+	e.POST("/room/:id", controllers.EnterRoom)
+	e.POST("/room/exit", controllers.ExitRoom)
 }
 
 // メイン関数
@@ -61,11 +65,17 @@ func main() {
 	}))
 	e.Use(middleware.Recover())
 
+	// コントローラ関連の初期化
+	dbConn := models.NewConnection(e)
+	controllers.New(dbConn)
+	controllers.NewRoomManager(e)
+
 	// htmlテンプレートの設定
 	t := &Template{
 		templates: template.Must(template.ParseGlob("templates/*.html")),
 	}
 	e.Renderer = t
+
 
 	// Route
 	setRoute(e)

@@ -12,14 +12,9 @@ import (
 	"../models"
 )
 
-// ログイン関連の構造体
-
 // POST /login
 func LoginPost(c echo.Context) error {
 	id_str := c.FormValue("input_id")
-
-	// Database
-	conn := models.NewConnection(c.Echo())
 
 	// Validate
 	id, err := strconv.Atoi(id_str)
@@ -31,16 +26,16 @@ func LoginPost(c echo.Context) error {
 	if id == 0 {
 		// id が 0 の場合はアカウントを新規作成
 		user = new(models.User)
-		user.Insert(conn, id)
+		user.Insert(dbConn, id)
 	} else {
-		user = models.FindUser(conn, id)
-		user.Access(conn)
+		user = models.FindUser(dbConn, id)
+		user.Access(dbConn)
 	}
 	// create cookie
 	cookie := new(http.Cookie)
 	cookie.Name = "BombmanUserId"
 	cookie.Value = strconv.Itoa(user.Id)
-	cookie.Expires = time.Now().Add(1 * time.Hour)
+	cookie.Expires = time.Now().Add(6 * time.Hour)
 	c.SetCookie(cookie)
 
 	return c.Redirect(http.StatusSeeOther, "/game")

@@ -20,6 +20,7 @@ n*n -> (n-2) * ceil(n/2) + ceil(n/2) * (ceil(n/2)-1)
 | POST | /login | {"id": 1} | menu.html | ログイン処理しつつ、menu.htmlへ遷移 |
 | POST | /room/create |  | game.html | 部屋の作成、IDは自動発番 |
 | POST | /room/{id} |  | game.html | 部屋への移動 |
+| POST | /room/exit |  | game.html | 部屋から退出 |
 | WS |  | {"id":0, "action":0, "x":0, "y":0} | {"id":0, "action":0, "x":0, "y":0} | ゲーム内アクション |
 
 ## DB
