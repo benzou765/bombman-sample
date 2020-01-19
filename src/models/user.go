@@ -19,11 +19,11 @@ const (
 )
 
 // insert user
-func (u *User) Insert(conn *DbConnection, chara_id int) {
+func (u *User) Insert(conn *DbConnection, charaId int) {
 	var err error
 	now := time.Now()
 	// insert
-	_, err = conn.GetSession().InsertInto(tableUser).Columns("chara_id", "created_at", "updated_at").Values(chara_id, now, now).Exec()
+	_, err = conn.GetSession().InsertInto(tableUser).Columns("chara_id", "created_at", "updated_at").Values(charaId, now, now).Exec()
 	if err != nil {
 		conn.GetEcho().Logger.Error(err)
 	}
@@ -47,7 +47,7 @@ func FindUser(conn *DbConnection, id int) *User {
 	return &u
 }
 
-// update user
+// update access time
 func (u *User) Access(conn *DbConnection) {
 	var err error
 	now := time.Now()
@@ -57,21 +57,15 @@ func (u *User) Access(conn *DbConnection) {
 	if err != nil {
 		conn.GetEcho().Logger.Error(err)
 	}
-
-	/*
-		// select
-		_, err = conn.GetSession().Select("*").From(tableUser).Where("id = ?", u.id).Load(&u)
-		if err != nil {
-			conn.GetEcho().Logger.Error(err)
-		}*/
 }
 
-/*
-func (u *User) Delete(conn *DbConnection, id int) {
+func (u *User) UpdateChara(conn *DbConnection) {
 	var err error
-	_, err = conn.GetSession().DeleteFrom(tableUser).Where("id = ?", id).Exec()
+	now := time.Now()
+	// update
+	attrsMap := map[string]interface{}{"chara_id": u.Chara_id, "updated_at": now}
+	_, err = conn.GetSession().Update(tableUser).SetMap(attrsMap).Where("id = ?", u.Id).Exec()
 	if err != nil {
 		conn.GetEcho().Logger.Error(err)
 	}
 }
-*/

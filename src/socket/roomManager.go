@@ -18,7 +18,7 @@ import (
 
 // 部屋管理の構造体
 type RoomManager struct {
-    rooms map[*Room]bool
+    rooms map[int]*Room
     logger echo.Logger
 }
 
@@ -35,6 +35,8 @@ type Room struct {
     clients map[*Client]bool
     // DB接続情報
     dbConn *models.DbConnection
+    // 部屋の大きさ
+    size int
 }
 
 // 通信上のJson構造体
@@ -54,24 +56,32 @@ var upgrader = &websocket.Upgrader {
 // Roomを管理する構造体の初期化
 func New(e *echo.Echo) *RoomManager {
     return &RoomManager {
-        rooms: make(map[*Room]bool),
+        rooms: make(map[int]*Room),
         logger: e.Logger,
     }
 }
 
-func (rm *RoomManager) CreateRoom(c *echo.Context, conn *models.DbConnection) {
+func (rm *RoomManager) GetRoom(roomId int) *Room{
+    return rm.rooms[roomId]
+}
+
+func (rm *RoomManager) CreateRoom(conn *models.DbConnection, size int) *Room {
     // 部屋情報をDBに保存
-    id := 1
+    var roomModel *models.Room
+    roomModel = new(models.Room)
+    roomModel.Insert(conn, size)
+
     room := &Room {
-        id: id,
+        id: roomModel.Id,
         forward: make(chan []byte),
         join: make(chan *Client),
         leave: make(chan *Client),
         clients: make(map[*Client]bool),
         dbConn: conn,
+        size: size,
     }
-    rm.rooms[room] = true
-    room.Run()
+    rm.rooms[roomModel.Id] = room
+    return room
 }
 
 // ルーム内での処理
@@ -117,7 +127,7 @@ func leaveClient(r *Room, c *Client) {
 }
 
 // ルームの使用開始
-func (r *Room) EnterRoom(c echo.Context, userId int) error {
+func (r *Room) EnterRoom(c echo.Context, userId int, conn *models.DbConnection) error {
     // WebSocketの準備
     socket, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
     if err != nil {
@@ -133,5 +143,10 @@ func (r *Room) EnterRoom(c echo.Context, userId int) error {
     defer func() { r.leave <- client }()
     go client.Write()
     client.Read()
+
+    // DBへの保存
+    roomModel := models.FindRoom(conn, r.id)
+    roomModel.AddRoom(conn, userId)
+    
     return nil
 }

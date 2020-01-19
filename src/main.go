@@ -39,9 +39,9 @@ func setRoute(e *echo.Echo) {
 	e.Static("/js", "public/game/js")
 	e.Static("/img", "public/game/img")
 	e.POST("/login", controllers.LoginPost)
-	e.POST("/room/create", controllers.CreateRoom)
-	e.POST("/room/:id", controllers.EnterRoom)
-	e.POST("/room/exit", controllers.ExitRoom)
+	e.POST("/rooms/create", controllers.CreateRoom)
+	e.POST("/rooms/:id", controllers.EnterRoom)
+	e.POST("/rooms", controllers.ShowRoom)
 }
 
 // メイン関数
