@@ -2,3 +2,4 @@ data
 src/logs
 assets
 test/node_modules
+test/bin/cookie.txt
