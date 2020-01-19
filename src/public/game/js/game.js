@@ -22,7 +22,8 @@ let BattleScene = new Phaser.Class ({
     init: function(data) {
         console.log("battle scene init");
         // debug
-        this.mapSize = 21;
+//        this.mapSize = 21;
+        this.mapSize = 5;
         this.roomId = 1;
         this.selectedCharaNum = 1;
         // キーボード
@@ -36,12 +37,25 @@ let BattleScene = new Phaser.Class ({
             { key: "BommerE", path: "img/bommer_e.png"},
             { key: "BommerF", path: "img/bommer_f.png"},
         ];
+        // 定数
+        this.speed = 2;
+        this.downDirection = 0;
+        this.leftDirection = 1;
+        this.rightDirection = 2;
+        this.upDirection = 3;
+        this.timeAnim = 4;
+        this.explosionAnim = 5;
+        // ゲーム内オブジェクト
+        this.charaObjects = [];
+        this.bombObjects = [];
+        this.objectsDirection = []; // 0: 下、1: 左、2: 右、3: 上
+        this.playerObjNum = 0;
+        this.map = [];
         // アセット群
         this.bomb = null;
         this.tilemap = null;
         this.layer = null;
         this.bommers = null;
-        this.player = null;
     },
     /**
      * シーンに使用するアセットの読み込み。シーン実行時に実行される
@@ -62,13 +76,12 @@ let BattleScene = new Phaser.Class ({
     create: function(data) {
         console.log("battle scene create");
         // create map
-        let map = [];
         let row = [];
         // 1行目
         for (let x = 0; x < this.mapSize; x++) {
             row.push(1);
         }
-        map.push(row);
+        this.map.push(row);
         for (let y = 1; (y < this.mapSize - 1); y++) {
             let row = [];
             if (y % 2 == 0) {
@@ -88,19 +101,144 @@ let BattleScene = new Phaser.Class ({
                 }
                 row.push(1);
             }
-            map.push(row);
+            this.map.push(row);
         }
         // 最終行
         row = [];
         for (let x = 0; x < this.mapSize; x++) {
             row.push(1);
         }
-        map.push(row);
-        this.tilemap = this.make.tilemap({data: map, tileWidth: 32, tileHeight: 32});
+        this.map.push(row);
+        this.tilemap = this.make.tilemap({data: this.map, tileWidth: 32, tileHeight: 32});
         let tiles = this.tilemap.addTilesetImage('Tile');
         this.layer = this.tilemap.createStaticLayer(0, tiles, 0, 0);
 
-        // create bomb
+        // プレイヤーキャラの作成
+        this.playerObjNum = this.charaObjects.length
+        let setting = this.bommerSettings[this.selectedCharaNum];
+        let player = this.add.sprite(48, 48, setting.key);
+        this.anims.create({
+            key: ('DownObj_' + this.playerObjNum),
+            frames: this.anims.generateFrameNames(setting.key, {start: 0, end: 2}),
+            frameRate: 4, // 1が1秒, 2が0.5秒
+            repeat: -1
+        });
+        this.anims.create({
+            key: ('LeftObj_' + this.playerObjNum),
+            frames: this.anims.generateFrameNames(setting.key, {start: 3, end: 5}),
+            frameRate: 4, // 1が1秒, 2が0.5秒
+            repeat: -1
+        });
+        this.anims.create({
+            key: ('RightObj_' + this.playerObjNum),
+            frames: this.anims.generateFrameNames(setting.key, {start: 6, end: 8}),
+            frameRate: 4, // 1が1秒, 2が0.5秒
+            repeat: -1
+        });
+        this.anims.create({
+            key: ('UpObj_' + this.playerObjNum),
+            frames: this.anims.generateFrameNames(setting.key, {start: 9, end: 11}),
+            frameRate: 4, // 1が1秒, 2が0.5秒
+            repeat: -1
+        });
+        this.charaObjects.push(player);
+        this.objectsDirection.push(this.downDirection);
+
+        // キーボード設定の初期化
+        this.cursors = this.input.keyboard.createCursorKeys();
+    },
+    /**
+     * シーンの更新。毎フレーム実行される。
+     * @param number time
+     * @param number delta
+     */
+    update: function() {
+        // カーソル操作
+        let playerX = this.charaObjects[this.playerObjNum].x;
+        let playerY = this.charaObjects[this.playerObjNum].y;
+        if (this.cursors.left.isDown && !this.isCollision(playerX, playerY, (playerX - this.speed), playerY, this.map)) {
+            this.charaObjects[this.playerObjNum].setX(playerX - this.speed);
+            this.objectsDirection[this.playerObjNum] = this.leftDirection;
+        } else if (this.cursors.right.isDown && !this.isCollision(playerX, playerY, (playerX + this.speed), playerY, this.map)) {
+            this.charaObjects[this.playerObjNum].setX(playerX + this.speed);
+            this.objectsDirection[this.playerObjNum] = this.rightDirection;
+        } else if (this.cursors.up.isDown && !this.isCollision(playerX, playerY, playerX, (playerY - this.speed), this.map)) {
+            this.charaObjects[this.playerObjNum].setY(playerY - this.speed);
+            this.objectsDirection[this.playerObjNum] = this.upDirection;
+        } else if (this.cursors.down.isDown && !this.isCollision(playerX, playerY, playerX, (playerY + this.speed), this.map)) {
+            this.charaObjects[this.playerObjNum].setY(playerY + this.speed);
+            this.objectsDirection[this.playerObjNum] = this.downDirection;
+        }
+        if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
+            let pointX = Math.floor(playerX / 32);
+            let pointY = Math.floor(playerY / 32);
+        }
+        // アニメーションの描画
+        for (let i = 0; i < this.charaObjects.length; i++) {
+            switch (this.objectsDirection[i]) {
+                case this.upDirection:
+                    this.charaObjects[i].anims.play('UpObj_' + i, true);
+                    break;
+                case this.downDirection:
+                    this.charaObjects[i].anims.play('DownObj_' + i, true);
+                    break;
+                case this.leftDirection:
+                    this.charaObjects[i].anims.play('LeftObj_' + i, true);
+                    break;
+                case this.rightDirection:
+                    this.charaObjects[i].anims.play('RightObj_' + i, true);
+                    break;
+            }
+        }
+    },
+
+    /**
+     * マップの衝突判定
+     * @param {int} nowX プレイヤーのX座標
+     * @param {int} nowY プレイヤーのY座標
+     * @param {int} nextX プレイヤーの移動先のX座標
+     * @param {int} nextY プレイヤーの移動先のY座標
+     * @param {array} map マップの配列
+     */
+    isCollision: function(nowX, nowY, nextX, nextY, map) {
+        if (nextX - nowX > 0) {
+            let nextPointX = Math.floor((nextX + 15) / 32);
+            let topPointY = Math.floor((nowY - 16) / 32);
+            let bottomPointY = Math.floor((nowY + 15) / 32);
+            if (map[topPointY][nextPointX] == 0 && map[bottomPointY][nextPointX] == 0) {
+                return false;
+            }
+        } else if (nextX - nowX < 0) {
+            let nextPointX = Math.floor((nextX - 16) / 32);
+            let topPointY = Math.floor((nowY - 16) / 32);
+            let bottomPointY = Math.floor((nowY + 15) / 32);
+            if (map[topPointY][nextPointX] == 0 && map[bottomPointY][nextPointX] == 0) {
+                return false;
+            }
+        }
+        if (nextY - nowY > 0) {
+            let nextPointY = Math.floor((nextY + 15) / 32);
+            let leftPointX = Math.floor((nowX - 16) / 32);
+            let rightPointX = Math.floor((nowX + 15) / 32);
+            if (map[nextPointY][leftPointX] == 0 && map[nextPointY][rightPointX] == 0) {
+                return false;
+            }
+        } else if (nextY - nowY < 0) {
+            let nextPointY = Math.floor((nextY - 16) / 32);
+            let leftPointX = Math.floor((nowX - 16) / 32);
+            let rightPointX = Math.floor((nowX + 15) / 32);
+            if (map[nextPointY][leftPointX] == 0 && map[nextPointY][rightPointX] == 0) {
+                return false;
+            }
+        }
+
+        return true;
+    },
+
+    /**
+     * 爆弾の生成
+     */
+    createBomb: function() {
         this.bomb = this.add.sprite(16, 16, 'Bomb', 6);
         this.anims.create({
             key: 'time',
@@ -114,44 +252,6 @@ let BattleScene = new Phaser.Class ({
             frameRate: 4,
             repeat: 1
         });
-
-        // プレイヤーキャラの作成
-        let setting = this.bommerSettings[this.selectedCharaNum];
-        this.player = this.add.sprite(48, 48, setting.key);
-        this.anims.create({
-            key: (setting.key + 'Down'),
-            frames: this.anims.generateFrameNames(setting.key, {start: 0, end: 2}),
-            frameRate: 4, // 1が1秒, 2が0.5秒
-            repeat: -1
-        });
-        this.anims.create({
-            key: (setting.key + 'Left'),
-            frames: this.anims.generateFrameNames(setting.key, {start: 3, end: 5}),
-            frameRate: 4, // 1が1秒, 2が0.5秒
-            repeat: -1
-        });
-        this.anims.create({
-            key: (setting.key + 'Right'),
-            frames: this.anims.generateFrameNames(setting.key, {start: 6, end: 8}),
-            frameRate: 4, // 1が1秒, 2が0.5秒
-            repeat: -1
-        });
-        this.anims.create({
-            key: (setting.key + 'Up'),
-            frames: this.anims.generateFrameNames(setting.key, {start: 9, end: 11}),
-            frameRate: 4, // 1が1秒, 2が0.5秒
-            repeat: -1
-        });
-        // キーボード設定の初期化
-        this.cursors = this.input.keyboard.createCursorKeys();
-    },
-    /**
-     * シーンの更新。毎フレーム実行される。
-     * @param number time
-     * @param number delta
-     */
-    update: function() {
-
     }
 });
 
