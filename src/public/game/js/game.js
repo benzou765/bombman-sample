@@ -22,8 +22,7 @@ let BattleScene = new Phaser.Class ({
     init: function(data) {
         console.log("battle scene init");
         // debug
-//        this.mapSize = 21;
-        this.mapSize = 5;
+        this.mapSize = 21;
         this.roomId = 1;
         this.selectedCharaNum = 1;
         // キーボード
@@ -47,15 +46,13 @@ let BattleScene = new Phaser.Class ({
         this.explosionAnim = 5;
         // ゲーム内オブジェクト
         this.charaObjects = [];
-        this.bombObjects = [];
+        this.bombObjects = []; // {"x":1, "y":1, "object":null, "explosion":false, "time":60}
         this.objectsDirection = []; // 0: 下、1: 左、2: 右、3: 上
         this.playerObjNum = 0;
         this.map = [];
         // アセット群
-        this.bomb = null;
         this.tilemap = null;
         this.layer = null;
-        this.bommers = null;
     },
     /**
      * シーンに使用するアセットの読み込み。シーン実行時に実行される
@@ -144,6 +141,10 @@ let BattleScene = new Phaser.Class ({
         this.charaObjects.push(player);
         this.objectsDirection.push(this.downDirection);
 
+        // カメラの設定
+        this.cameras.main.setSize(640, 480);
+        this.cameras.main.startFollow(player)
+
         // キーボード設定の初期化
         this.cursors = this.input.keyboard.createCursorKeys();
     },
@@ -172,7 +173,21 @@ let BattleScene = new Phaser.Class ({
         if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
             let pointX = Math.floor(playerX / 32);
             let pointY = Math.floor(playerY / 32);
+            // TODO: メモリを抑えるか、計算速度を早くするか
+            let bombObject = null;
+            for (let i = 0; i < this.bombObjects.length; i++) {
+                if (this.bombObjects.x == pointX && this.bombObjects.y == pointY) {
+                    bombObject = this.bombObjects.object;
+                }
+            }
+            if (bombObject == null) {
+                let setX = pointX * 32 + 16;
+                let setY = pointY * 32 + 16;
+                let bomb = this.createBomb(setX, setY, this.bombObjects.length);
+                this.bombObjects.push({"x": pointX, "y": pointY, "object": bomb, "explosion": false, "time": 90});
+            }
         }
+
         // アニメーションの描画
         for (let i = 0; i < this.charaObjects.length; i++) {
             switch (this.objectsDirection[i]) {
@@ -190,6 +205,14 @@ let BattleScene = new Phaser.Class ({
                     break;
             }
         }
+        for (let i = 0; i < this.bombObjects.length; i++) {
+            let bombObject = this.bombObjects[i];
+            if (bombObject.explosion) {
+                bombObject.object.anims.play('explosion_' + i, true);
+            } else {
+                bombObject.object.anims.play('time_' + i, true);
+            }
+        }
     },
 
     /**
@@ -199,6 +222,7 @@ let BattleScene = new Phaser.Class ({
      * @param {int} nextX プレイヤーの移動先のX座標
      * @param {int} nextY プレイヤーの移動先のY座標
      * @param {array} map マップの配列
+     * @return {boolean} 衝突するか否か
      */
     isCollision: function(nowX, nowY, nextX, nextY, map) {
         if (nextX - nowX > 0) {
@@ -237,21 +261,26 @@ let BattleScene = new Phaser.Class ({
 
     /**
      * 爆弾の生成
+     * @param {int} x 配置場所のX座標
+     * @param {int} y 配置場所のY座標
+     * @param {int} id オブジェクトのID
+     * @param {Phaser.GameObjects.Sprite} 爆弾オブジェクト
      */
-    createBomb: function() {
-        this.bomb = this.add.sprite(16, 16, 'Bomb', 6);
+    createBomb: function(x, y, id) {
+        let bomb = this.add.sprite(x, y, 'Bomb');
         this.anims.create({
-            key: 'time',
+            key: 'time_' + id,
             frames: this.anims.generateFrameNames('Bomb', {start: 0, end: 2}),
             frameRate: 4, // 1が1秒, 2が0.5秒
             repeat: 3
         });
         this.anims.create({
-            key: 'explosion',
+            key: 'explosion_' + id,
             frames: this.anims.generateFrameNames('Bomb', {start: 3, end: 5}),
             frameRate: 4,
             repeat: 1
         });
+        return bomb;
     }
 });
 
