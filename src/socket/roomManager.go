@@ -150,3 +150,7 @@ func (r *Room) EnterRoom(c echo.Context, userId int, conn *models.DbConnection) 
     
     return nil
 }
+
+func (r *Room) GetId() int {
+    return r.id
+}

@@ -13,13 +13,13 @@ import (
 	"../models"
 )
 
-type RoomCreateData struct {
+type RequestCreateRoom struct {
 	CharaId int `json:"chara_id,int"`
 	Size int `json:"size,int"`
 }
 
-type RoomSelectData struct {
-	CharaId int `json:"chara_id,int"`
+type ResponseCreateRoom struct {
+	RoomId int `json:"room_id,int"`
 }
 
 type RoomInfo struct {
@@ -31,7 +31,7 @@ type RoomInfo struct {
 	Num int `json:"num,int"`
 }
 
-type ShowRooms struct {
+type ResponseShowRoom struct {
 	Rooms []*RoomInfo `json:"room_info"`
 }
 
@@ -53,7 +53,7 @@ func CreateRoom(c echo.Context) error {
 	}
 
 	// 入力データの解析
-	reqData := new(RoomCreateData)
+	reqData := new(RequestCreateRoom)
 	err = c.Bind(reqData)
 	if err != nil {
 		return c.HTML(http.StatusForbidden, "<strong>Forbidden</strong>")
@@ -68,11 +68,12 @@ func CreateRoom(c echo.Context) error {
 
 	// 部屋の作成
 	room := roomManager.CreateRoom(dbConn, reqData.Size)
-	room.Run()
+	go room.Run()
 
-	// 部屋へ入室
-	room.EnterRoom(c, user.Id, dbConn)
-	return nil
+	response := &ResponseCreateRoom{
+		RoomId: room.GetId(),
+	}
+	return c.JSON(http.StatusOK, response)
 }
 
 func ShowRoom(c echo.Context) error {
@@ -109,14 +110,14 @@ func ShowRoom(c echo.Context) error {
 		infos = append(infos, info)
 
 	}
-	response := &ShowRooms{
+	response := &ResponseShowRoom{
 		Rooms: infos,
 	}
 
 	return c.JSON(http.StatusOK, response)
 }
 
-func EnterRoom(c echo.Context) error {
+func ConnectWebSocket(c echo.Context) error {
 	// cookie からIDを取得
 	cookie, err := c.Cookie("BombmanUserId")
 	if err != nil {
@@ -126,27 +127,17 @@ func EnterRoom(c echo.Context) error {
 	if err != nil {
 		return c.HTML(http.StatusForbidden, "<strong>Forbidden</strong>")
 	}
-
-	// 入力データの解析
-	reqData := new(RoomSelectData)
-	err = c.Bind(reqData)
-	if err != nil {
-		return c.HTML(http.StatusForbidden, "<strong>Forbidden</strong>")
-	}
 	// ログイン処理
 	user := models.FindUser(dbConn, userId)
 	if user == nil {
 		return c.HTML(http.StatusForbidden, "<strong>Forbidden</strong>")
 	}
-	user.Chara_id = reqData.CharaId
 	user.UpdateChara(dbConn)
 
-	// 部屋IDの取得
+	// 部屋へ入室
 	roomId, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		return c.HTML(http.StatusForbidden, "<strong>Forbidden</strong>")
-	}
 	room := roomManager.GetRoom(roomId)
+
 	room.EnterRoom(c, user.Id, dbConn)
 	return nil
 }

@@ -47,18 +47,6 @@ func FindUser(conn *DbConnection, id int) *User {
 	return &u
 }
 
-// update access time
-func (u *User) Access(conn *DbConnection) {
-	var err error
-	now := time.Now()
-	// update
-	attrsMap := map[string]interface{}{"updated_at": now}
-	_, err = conn.GetSession().Update(tableUser).SetMap(attrsMap).Where("id = ?", u.Id).Exec()
-	if err != nil {
-		conn.GetEcho().Logger.Error(err)
-	}
-}
-
 func (u *User) UpdateChara(conn *DbConnection) {
 	var err error
 	now := time.Now()
