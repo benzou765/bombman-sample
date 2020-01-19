@@ -153,7 +153,7 @@ let BattleScene = new Phaser.Class ({
      * @param number time
      * @param number delta
      */
-    update: function() {
+    update: function(time, delta) {
         // カーソル操作
         let playerX = this.charaObjects[this.playerObjNum].x;
         let playerY = this.charaObjects[this.playerObjNum].y;
