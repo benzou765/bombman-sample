@@ -41,7 +41,7 @@ func setRoute(e *echo.Echo) {
 	e.POST("/login", controllers.LoginPost)
 	e.POST("/update", controllers.UpdateCharaId)
 	e.POST("/rooms/create", controllers.CreateRoom)
-	e.POST("/rooms", controllers.ShowRoom)
+	e.GET("/rooms", controllers.ShowRoom)
 	e.GET("/ws/:id", controllers.ConnectWebSocket)
 }
 
