@@ -45,6 +45,9 @@ let SelectCharaScene = new Phaser.Class ({
         // アセット群
         this.bomb = null;
         this.bommers = [];
+        if (Object.keys(data).length != 0) {
+            this.selectCharaNum = data.chara_id;
+        }
     },
     /**
      * シーンに使用するアセットの読み込み。シーン実行時に実行される
@@ -77,7 +80,7 @@ let SelectCharaScene = new Phaser.Class ({
         this.add.text(260, 320, "部屋を選択する").setFontSize(16).setColor("#34675c");
 
         // キャラ選択アイコンの初期化
-        this.selectCharaIcon = this.add.rectangle(this.bommerSettings[0].point.x, this.bommerSettings[0].point.y, 40, 40, 0x76dbd1);
+        this.selectCharaIcon = this.add.rectangle(this.bommerSettings[this.selectCharaNum].point.x, this.bommerSettings[this.selectCharaNum].point.y, 40, 40, 0x76dbd1);
         // 部屋選択アイコンの初期化
         this.selectMenuIcon = this.add.circle(this.menuSettings[0].point.x, this.menuSettings[0].point.y, 5, 0x76dbd1);
 

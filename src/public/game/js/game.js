@@ -24,7 +24,7 @@ let BattleScene = new Phaser.Class ({
         // debug
         this.mapSize = 21;
         this.roomId = 1;
-        this.selectedCharaNum = 1;
+        this.selectedCharaNum = data.chara_id;
         // キーボード
         this.cursors = null;
         // 設定変数群
@@ -49,6 +49,7 @@ let BattleScene = new Phaser.Class ({
         this.bombObjects = []; // {"x":1, "y":1, "object":null, "explosion":false, "time":60}
         this.objectsDirection = []; // 0: 下、1: 左、2: 右、3: 上
         this.playerObjNum = 0;
+        this.isPlayerSetBomb = false;
         this.map = [];
         // アセット群
         this.tilemap = null;
@@ -158,19 +159,27 @@ let BattleScene = new Phaser.Class ({
         let playerX = this.charaObjects[this.playerObjNum].x;
         let playerY = this.charaObjects[this.playerObjNum].y;
         if (this.cursors.left.isDown && !this.isCollision(playerX, playerY, (playerX - this.speed), playerY, this.map)) {
+            let diff = (playerY % 32) - 16;
+            this.charaObjects[this.playerObjNum].setY(playerY - diff);
             this.charaObjects[this.playerObjNum].setX(playerX - this.speed);
             this.objectsDirection[this.playerObjNum] = this.leftDirection;
         } else if (this.cursors.right.isDown && !this.isCollision(playerX, playerY, (playerX + this.speed), playerY, this.map)) {
+            let diff = (playerY % 32) - 16;
+            this.charaObjects[this.playerObjNum].setY(playerY - diff);
             this.charaObjects[this.playerObjNum].setX(playerX + this.speed);
             this.objectsDirection[this.playerObjNum] = this.rightDirection;
         } else if (this.cursors.up.isDown && !this.isCollision(playerX, playerY, playerX, (playerY - this.speed), this.map)) {
+            let diff = (playerX % 32) - 16;
+            this.charaObjects[this.playerObjNum].setX(playerX - diff);
             this.charaObjects[this.playerObjNum].setY(playerY - this.speed);
             this.objectsDirection[this.playerObjNum] = this.upDirection;
         } else if (this.cursors.down.isDown && !this.isCollision(playerX, playerY, playerX, (playerY + this.speed), this.map)) {
+            let diff = (playerX % 32) - 16;
+            this.charaObjects[this.playerObjNum].setX(playerX - diff);
             this.charaObjects[this.playerObjNum].setY(playerY + this.speed);
             this.objectsDirection[this.playerObjNum] = this.downDirection;
         }
-        if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
+        if (Phaser.Input.Keyboard.JustDown(this.cursors.space) && !this.isPlayerSetBomb) {
             let pointX = Math.floor(playerX / 32);
             let pointY = Math.floor(playerY / 32);
             // TODO: メモリを抑えるか、計算速度を早くするか
@@ -185,6 +194,7 @@ let BattleScene = new Phaser.Class ({
                 let setY = pointY * 32 + 16;
                 let bomb = this.createBomb(setX, setY, this.bombObjects.length);
                 this.bombObjects.push({"x": pointX, "y": pointY, "object": bomb, "explosion": false, "time": 90});
+                this.isPlayerSetBomb = true;
             }
         }
 
@@ -227,30 +237,30 @@ let BattleScene = new Phaser.Class ({
     isCollision: function(nowX, nowY, nextX, nextY, map) {
         if (nextX - nowX > 0) {
             let nextPointX = Math.floor((nextX + 15) / 32);
-            let topPointY = Math.floor((nowY - 16) / 32);
-            let bottomPointY = Math.floor((nowY + 15) / 32);
+            let topPointY = Math.floor((nowY - 12) / 32);
+            let bottomPointY = Math.floor((nowY + 11) / 32);
             if (map[topPointY][nextPointX] == 0 && map[bottomPointY][nextPointX] == 0) {
                 return false;
             }
         } else if (nextX - nowX < 0) {
             let nextPointX = Math.floor((nextX - 16) / 32);
-            let topPointY = Math.floor((nowY - 16) / 32);
-            let bottomPointY = Math.floor((nowY + 15) / 32);
+            let topPointY = Math.floor((nowY - 12) / 32);
+            let bottomPointY = Math.floor((nowY + 11) / 32);
             if (map[topPointY][nextPointX] == 0 && map[bottomPointY][nextPointX] == 0) {
                 return false;
             }
         }
         if (nextY - nowY > 0) {
             let nextPointY = Math.floor((nextY + 15) / 32);
-            let leftPointX = Math.floor((nowX - 16) / 32);
-            let rightPointX = Math.floor((nowX + 15) / 32);
+            let leftPointX = Math.floor((nowX - 12) / 32);
+            let rightPointX = Math.floor((nowX + 11) / 32);
             if (map[nextPointY][leftPointX] == 0 && map[nextPointY][rightPointX] == 0) {
                 return false;
             }
         } else if (nextY - nowY < 0) {
             let nextPointY = Math.floor((nextY - 16) / 32);
-            let leftPointX = Math.floor((nowX - 16) / 32);
-            let rightPointX = Math.floor((nowX + 15) / 32);
+            let leftPointX = Math.floor((nowX - 12) / 32);
+            let rightPointX = Math.floor((nowX + 11) / 32);
             if (map[nextPointY][leftPointX] == 0 && map[nextPointY][rightPointX] == 0) {
                 return false;
             }

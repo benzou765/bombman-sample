@@ -22,11 +22,24 @@ let SelectRoomScene = new Phaser.Class ({
     init: function(data) {
         console.log("select room scene init");
         // サーバから現在稼働中の部屋一覧を受け取る
-        // debug
+        let cookies = document.cookie;
+        let cookiesArray = cookies.split(';')
+        let userId = 0;
+        if (cookiesArray.length == 1) {
+            let cArray = cookiesArray[0].split('=')
+            if (cArray[0] == 'BombmanUserId') {
+                userId = cArray[1];
+            }
+        }
+        this.load.json({
+            key: 'rooms',
+            url: '/rooms',
+            xhrSettings: {
+                responseType: "json",
+                headerValue: ("Cookie:BombmanUserId=" + userId)
+            }
+        });
         this.rooms = [];
-/*        for (let i = 1; i <= 100; i++) {
-            this.rooms.push({id: i, size: 11, num: 4});
-        }*/
         // 前シーンからのデータ取得
         this.selectedCharaNum = data.chara_id;
         // キーボード
@@ -200,12 +213,13 @@ let SelectRoomScene = new Phaser.Class ({
             }
             // 決定処理
             if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
+                let sendData = { chara_id: this.selectedCharaNum};
                 if (this.selectBack) {
                     this.scene.stop();
-                    this.scene.start("selectChara", null);
+                    this.scene.start("selectChara", sendData);
                 } else {
                     this.scene.stop();
-                    this.scene.start("battle", null);
+                    this.scene.start("battle", sendData);
                 }
             }
         }

@@ -114,10 +114,11 @@ let CreateRoomScene = new Phaser.Class ({
         }
             // 決定処理
         if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
+            let sendData = { chara_id: this.selectedCharaNum};
             switch(this.roomSizeSelectNum) {
                 case 0:
                     this.scene.stop();
-                    this.scene.start("selectChara");
+                    this.scene.start("selectChara", sendData);
                     break;
                 case 1:
                 case 2:
@@ -127,7 +128,7 @@ let CreateRoomScene = new Phaser.Class ({
                 case 6:
                 case 7:
                     this.scene.stop();
-                    this.scene.start("battle");
+                    this.scene.start("battle", sendData);
                     break;
             }
         }
