@@ -47,10 +47,12 @@ let CreateRoomScene = new Phaser.Class ({
         ];
         // ユーザ操作変数群
         this.roomSizeSelectNum = 0;
+        this.modalActive = false;
         // 操作アイコン群
         this.selectRoomSizeIcon = null;
         // アセット群
         this.bommer = null;
+        this.modalWindowAssets = [];
     },
     /**
      * シーンに使用するアセットの読み込み。シーン実行時に実行される
@@ -90,6 +92,19 @@ let CreateRoomScene = new Phaser.Class ({
             repeat: -1
         });
         this.add.text(420, 210, "選択中のキャラクター").setFontSize(13).setColor("#34675c");
+        // モーダルウィンドウの初期化
+        let modal = this.add.rectangle(320, 240, 160, 80, 0xf4f4f4).setName("modalWindow").setStrokeStyle(3, 0x34675c);
+        this.modalWindowAssets.push(modal);
+        let modalMessage = this.add.text(253, 213, "部屋IDは").setName("modalText").setFontSize(16).setColor("#34675c");
+        this.modalWindowAssets.push(modalMessage);
+        let modalButton = this.add.rectangle(320, 260, 40, 26, 0x76dbd1).setName("modalButton");
+        this.modalWindowAssets.push(modalButton);
+        let modalButtonText = this.add.text(310, 248, "OK").setName("modalButtonText").setFontSize(20).setColor("#34675c");
+        this.modalWindowAssets.push(modalButtonText);
+        for (let i = 0; i < this.modalWindowAssets.length; i++) {
+            this.modalWindowAssets[i].setVisible(this.modalActive);
+            this.modalWindowAssets[i].setActive(this.modalActive);
+        }
         // キーボード設定の初期化
         this.cursors = this.input.keyboard.createCursorKeys();
     },
@@ -99,37 +114,61 @@ let CreateRoomScene = new Phaser.Class ({
      * @param number delta
      */
     update: function(time, delta) {
-        if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
-            if (0 < this.roomSizeSelectNum && this.roomSizeSelectNum < this.roomSettings.length) {
-                this.roomSizeSelectNum -= 1;
-                let setting = this.roomSettings[this.roomSizeSelectNum];
-                this.selectRoomSizeIcon.setPosition(setting.point.x - 10, setting.point.y + 8);
-            }
-        } else if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
-            if (0 <= this.roomSizeSelectNum && this.roomSizeSelectNum < (this.roomSettings.length - 1)) {
-                this.roomSizeSelectNum += 1;
-                let setting = this.roomSettings[this.roomSizeSelectNum];
-                this.selectRoomSizeIcon.setPosition(setting.point.x - 10, setting.point.y + 8);
-            }
-        }
+        if (this.modalActive) {
+            // モーダル表示時の操作
             // 決定処理
-        if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
-            let sendData = { chara_id: this.selectedCharaNum};
-            switch(this.roomSizeSelectNum) {
-                case 0:
-                    this.scene.stop();
-                    this.scene.start("selectChara", sendData);
-                    break;
-                case 1:
-                case 2:
-                case 3:
-                case 4:
-                case 5:
-                case 6:
-                case 7:
-                    this.scene.stop();
-                    this.scene.start("battle", sendData);
-                    break;
+            if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
+                let sendData = { chara_id: this.selectedCharaNum};
+                this.scene.stop();
+                this.scene.start("battle", sendData);
+            }
+        } else {
+            // モーダル非表示時の操作
+            if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
+                if (0 < this.roomSizeSelectNum && this.roomSizeSelectNum < this.roomSettings.length) {
+                    this.roomSizeSelectNum -= 1;
+                    let setting = this.roomSettings[this.roomSizeSelectNum];
+                    this.selectRoomSizeIcon.setPosition(setting.point.x - 10, setting.point.y + 8);
+                }
+            } else if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
+                if (0 <= this.roomSizeSelectNum && this.roomSizeSelectNum < (this.roomSettings.length - 1)) {
+                    this.roomSizeSelectNum += 1;
+                    let setting = this.roomSettings[this.roomSizeSelectNum];
+                    this.selectRoomSizeIcon.setPosition(setting.point.x - 10, setting.point.y + 8);
+                }
+            }
+            // 決定処理
+            if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
+                let sendData = { chara_id: this.selectedCharaNum};
+                switch(this.roomSizeSelectNum) {
+                    case 0:
+                        this.scene.stop();
+                        this.scene.start("selectChara", sendData);
+                        break;
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    case 6:
+                    case 7:
+                        // 部屋作成APIの実行
+                        this.load.json({
+                            key: 'createRoom',
+                            url: '/rooms/create',
+                            xhrSettings: {
+                                responseType: "json",
+                                headerValue: ("Cookie:BombmanUserId=" + userId)
+                            }
+                        });
+                        // モーダルウィンドウの表示準備
+                        this.modalActive = true;
+                        for (let i = 0; i < this.modalWindowAssets.length; i++) {
+                            this.modalWindowAssets[i].setVisible(this.modalActive);
+                            this.modalWindowAssets[i].setActive(this.modalActive)
+                        }
+                        break;
+                }
             }
         }
 

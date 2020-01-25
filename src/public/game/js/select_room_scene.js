@@ -32,7 +32,7 @@ let SelectRoomScene = new Phaser.Class ({
             }
         }
         this.load.json({
-            key: 'rooms',
+            key: 'showRooms',
             url: '/rooms',
             xhrSettings: {
                 responseType: "json",
