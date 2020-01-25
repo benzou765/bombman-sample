@@ -23,7 +23,7 @@ const (
 func (room *Room) Insert(conn *DbConnection, size int) {
 	var err error
 	now := time.Now()
-	members := ""
+	members := "{\"members\":[]}"
 	// insert
 	_, err = conn.GetSession().InsertInto(tableRoom).Columns("size", "members", "created_at", "updated_at").Values(size, members, now, now).Exec()
 	if err != nil {

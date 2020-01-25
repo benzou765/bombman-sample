@@ -31,6 +31,10 @@ type RoomInfo struct {
 	Num int `json:"num,int"`
 }
 
+type RoomMembers struct {
+	Members []int `json"members"`
+}
+
 type ResponseShowRoom struct {
 	Rooms []*RoomInfo `json:"room_info"`
 }
@@ -97,15 +101,16 @@ func ShowRoom(c echo.Context) error {
 	rooms := models.GetAllRoom(dbConn)
 	infos := make([]*RoomInfo, 0)
 	for _, room := range rooms {
-		var users []int
-		err := json.Unmarshal([]byte(room.Members), &users)
+		var roomMembers RoomMembers
+		err := json.Unmarshal([]byte(room.Members), &roomMembers)
 		if err != nil {
+			c.Echo().Logger.Error(err)
 			return c.HTML(http.StatusInternalServerError, "<strong>InternalServerError</strong>")
 		}
 		info := &RoomInfo{
 			Id: room.Id,
 			Size: room.Size,
-			Num: len(users),
+			Num: len(roomMembers.Members),
 		}
 		infos = append(infos, info)
 

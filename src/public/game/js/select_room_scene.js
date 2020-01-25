@@ -21,24 +21,7 @@ let SelectRoomScene = new Phaser.Class ({
      */
     init: function(data) {
         console.log("select room scene init");
-        // サーバから現在稼働中の部屋一覧を受け取る
-        let cookies = document.cookie;
-        let cookiesArray = cookies.split(';')
-        let userId = 0;
-        if (cookiesArray.length == 1) {
-            let cArray = cookiesArray[0].split('=')
-            if (cArray[0] == 'BombmanUserId') {
-                userId = cArray[1];
-            }
-        }
-        this.load.json({
-            key: 'showRooms',
-            url: '/rooms',
-            xhrSettings: {
-                responseType: "json",
-                headerValue: ("Cookie:BombmanUserId=" + userId)
-            }
-        });
+        // 通信で取得するデータ
         this.rooms = [];
         // 前シーンからのデータ取得
         this.selectedCharaNum = data.chara_id;
@@ -75,6 +58,23 @@ let SelectRoomScene = new Phaser.Class ({
             url: './js/lib/rexuiplugin.min.js',
             sceneKey: 'rexUI'
         })
+        // サーバから現在稼働中の部屋一覧を受け取る
+        let cookies = document.cookie;
+        let cookiesArray = cookies.split(';');
+        let userId = 0;
+        if (cookiesArray.length == 1) {
+            let cArray = cookiesArray[0].split('=');
+            if (cArray[0] == 'BombmanUserId') {
+                userId = cArray[1];
+            }
+        }
+        this.load.json({
+            key: 'showRooms',
+            url: '/rooms',
+            xhrSettings: {
+                headerValue: ("Cookie:BombmanUserId=" + userId)
+            }
+        });
     },
     /**
      * シーンの作成。シーンの実行時に実行される。アセットの読み込み完了後に実行され、画面の構築等を行う。
@@ -82,7 +82,10 @@ let SelectRoomScene = new Phaser.Class ({
      */
     create: function() {
         console.log("select room scene create");
+        // 背景色の設定
         this.cameras.main.setBackgroundColor(0xecf4f3);
+        // 部屋情報の設定
+        this.rooms = this.cache.json.get('showRooms').room_info;
         // タイトルテキスト
         this.add.text(20, 20, "部屋を選択する").setFontSize(32).setColor("#34675c");
         // 前画面に戻るテキスト

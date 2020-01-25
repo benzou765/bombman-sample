@@ -1,2 +1,2 @@
 #!/bin/sh
-curl -v -b cookie.txt -XPOST http://localhost:8080/rooms
+curl -v -b cookie.txt http://localhost:8080/rooms

@@ -48,11 +48,13 @@ let CreateRoomScene = new Phaser.Class ({
         // ユーザ操作変数群
         this.roomSizeSelectNum = 0;
         this.modalActive = false;
+        this.roomId = 0;
         // 操作アイコン群
         this.selectRoomSizeIcon = null;
         // アセット群
         this.bommer = null;
         this.modalWindowAssets = [];
+        this.blind = null;
     },
     /**
      * シーンに使用するアセットの読み込み。シーン実行時に実行される
@@ -95,7 +97,7 @@ let CreateRoomScene = new Phaser.Class ({
         // モーダルウィンドウの初期化
         let modal = this.add.rectangle(320, 240, 160, 80, 0xf4f4f4).setName("modalWindow").setStrokeStyle(3, 0x34675c);
         this.modalWindowAssets.push(modal);
-        let modalMessage = this.add.text(253, 213, "部屋IDは").setName("modalText").setFontSize(16).setColor("#34675c");
+        let modalMessage = this.add.text(253, 213, "部屋ID：").setName("modalText").setFontSize(16).setColor("#34675c");
         this.modalWindowAssets.push(modalMessage);
         let modalButton = this.add.rectangle(320, 260, 40, 26, 0x76dbd1).setName("modalButton");
         this.modalWindowAssets.push(modalButton);
@@ -105,6 +107,9 @@ let CreateRoomScene = new Phaser.Class ({
             this.modalWindowAssets[i].setVisible(this.modalActive);
             this.modalWindowAssets[i].setActive(this.modalActive);
         }
+        this.blind = this.add.rectangle(320, 240, 640, 480, 0x000000);
+        this.blind.setAlpha(0.25);
+        this.blind.setVisible(false);
         // キーボード設定の初期化
         this.cursors = this.input.keyboard.createCursorKeys();
     },
@@ -114,6 +119,14 @@ let CreateRoomScene = new Phaser.Class ({
      * @param number delta
      */
     update: function(time, delta) {
+        // アニメーションの描画
+        let setting = this.bommerSettings[this.selectedCharaNum];
+        this.bommer.play(setting.key + 'Down', true);
+
+        if (this.blind.visible) {
+            return;
+        }
+
         if (this.modalActive) {
             // モーダル表示時の操作
             // 決定処理
@@ -139,10 +152,10 @@ let CreateRoomScene = new Phaser.Class ({
             }
             // 決定処理
             if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
-                let sendData = { chara_id: this.selectedCharaNum};
                 switch(this.roomSizeSelectNum) {
                     case 0:
                         this.scene.stop();
+                        let sendData = { chara_id: this.selectedCharaNum};
                         this.scene.start("selectChara", sendData);
                         break;
                     case 1:
@@ -152,28 +165,53 @@ let CreateRoomScene = new Phaser.Class ({
                     case 5:
                     case 6:
                     case 7:
-                        // 部屋作成APIの実行
-                        this.load.json({
-                            key: 'createRoom',
-                            url: '/rooms/create',
-                            xhrSettings: {
-                                responseType: "json",
-                                headerValue: ("Cookie:BombmanUserId=" + userId)
+                        // 部屋作成APIの呼び出し関数
+                        async function postCreateRoom(scene) {
+                            // cookieの取得
+                            let userId = 0;
+                            let cookies = document.cookie;
+                            let cookiesArray = cookies.split(';');
+                            if (cookiesArray.length == 1) {
+                                let cArray = cookiesArray[0].split('=');
+                                if (cArray[0] == 'BombmanUserId') {
+                                    userId = cArray[1];
+                                }
                             }
-                        });
-                        // モーダルウィンドウの表示準備
-                        this.modalActive = true;
-                        for (let i = 0; i < this.modalWindowAssets.length; i++) {
-                            this.modalWindowAssets[i].setVisible(this.modalActive);
-                            this.modalWindowAssets[i].setActive(this.modalActive)
-                        }
+                            // POST通信
+                            let method = "POST";
+                            let headers = {
+                                "Cookie": "BombmanUserId=" + userId,
+                                "Accept": "application/json",
+                                "Content-Type": "application/json"
+                            };
+                            let jsonBody = JSON.stringify({"chara_id": scene.selectedCharaNum, "size": scene.roomSettings[scene.roomSizeSelectNum].size});
+                            console.log(jsonBody);
+                            let response = await fetch("/rooms/create", {method: method, headers: headers, body: jsonBody})
+                            .then((res) => {
+                                return res.json();
+                            })
+                            .catch(err => {
+                                console.log("Error!!");
+                            });
+                            scene.roomId = response.room_id;
+                            // モーダルウィンドウの表示準備
+                            scene.modalActive = true;
+                            for (let i = 0; i < scene.modalWindowAssets.length; i++) {
+                                scene.modalWindowAssets[i].setVisible(scene.modalActive);
+                                scene.modalWindowAssets[i].setActive(scene.modalActive)
+                                if (scene.modalWindowAssets[i].name == "modalText") {
+                                    let message = "部屋ID：" + ('000000' + scene.roomId).slice(-6);
+                                    scene.modalWindowAssets[i].setText(message);
+                                }
+                            }
+                            scene.blind.setVisible(false);
+                        };
+                        // 部屋作成APIの呼び出し
+                        postCreateRoom(this);
+                        this.blind.setVisible(true);
                         break;
                 }
             }
         }
-
-        // アニメーションの描画
-        let setting = this.bommerSettings[this.selectedCharaNum];
-        this.bommer.play(setting.key + 'Down', true);
-    }
+    },
 });
