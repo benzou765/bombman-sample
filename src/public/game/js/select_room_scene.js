@@ -221,6 +221,43 @@ let SelectRoomScene = new Phaser.Class ({
                     this.scene.stop();
                     this.scene.start("selectChara", sendData);
                 } else {
+                    /**
+                     * ユーザ更新APIの呼び出し関数
+                     * @param {Phaser.Scene} scene 
+                     */
+                    async function postUpdateUser(scene) {
+                        // cookieの取得
+                        let userId = 0;
+                        let cookies = document.cookie;
+                        let cookiesArray = cookies.split(';');
+                        if (cookiesArray.length == 1) {
+                            let cArray = cookiesArray[0].split('=');
+                            if (cArray[0] == 'BombmanUserId') {
+                                userId = cArray[1];
+                            }
+                        }
+                        // POST通信
+                        let method = "POST";
+                        let headers = {
+                            "Cookie": "BombmanUserId=" + userId,
+                            "Accept": "application/json",
+                            "Content-Type": "application/json"
+                        };
+                        let jsonBody = JSON.stringify({"chara_id": scene.selectedCharaNum});
+                        await fetch("/user/update", {
+                            method: method,
+                            headers: headers,
+                            body: jsonBody
+                        })
+                        .then(res => {
+                            return res.json();
+                        })
+                        .catch(err => {
+                            console.log("Error!!");
+                            console.log(err);
+                        });
+                    }
+                    postUpdateUser(this);
                     this.scene.stop();
                     this.scene.start("battle", sendData);
                 }
