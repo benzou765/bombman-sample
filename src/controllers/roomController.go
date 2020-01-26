@@ -1,21 +1,21 @@
 package controllers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
-	"encoding/json"
 
 	// echo
 	"github.com/labstack/echo"
 
 	// local packages
-	"../socket"
 	"../models"
+	"../socket"
 )
 
 type RequestCreateRoom struct {
 	CharaId int `json:"chara_id,int"`
-	Size int `json:"size,int"`
+	Size    int `json:"size,int"`
 }
 
 type ResponseCreateRoom struct {
@@ -70,6 +70,9 @@ func CreateRoom(c echo.Context) error {
 	user.Chara_id = reqData.CharaId
 	user.UpdateChara(dbConn)
 
+	// 部屋の掃除
+	roomManager.CleanRoom(dbConn)
+
 	// 部屋の作成
 	room := roomManager.CreateRoom(dbConn, reqData.Size)
 	go room.Run()
@@ -108,9 +111,9 @@ func ShowRoom(c echo.Context) error {
 			return c.HTML(http.StatusInternalServerError, "<strong>InternalServerError</strong>")
 		}
 		info := &RoomInfo{
-			Id: room.Id,
+			Id:   room.Id,
 			Size: room.Size,
-			Num: len(roomMembers.Members),
+			Num:  len(roomMembers.Members),
 		}
 		infos = append(infos, info)
 
@@ -143,6 +146,6 @@ func ConnectWebSocket(c echo.Context) error {
 	roomId, err := strconv.Atoi(c.Param("id"))
 	room := roomManager.GetRoom(roomId)
 
-	room.EnterRoom(c, user.Id, dbConn)
+	room.EnterRoom(c, user.Id, user.Chara_id, dbConn)
 	return nil
 }
