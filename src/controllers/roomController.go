@@ -78,7 +78,7 @@ func CreateRoom(c echo.Context) error {
 	roomManager.CleanRoom(dbConn)
 
 	// 部屋の作成
-	room := roomManager.CreateRoom(dbConn, reqData.Size)
+	room := roomManager.CreateRoom(dbConn, reqData.Size, c.Echo())
 	go room.Run()
 
 	response := &ResponseCreateRoom{

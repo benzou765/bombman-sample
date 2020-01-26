@@ -38,8 +38,8 @@ func NewClient(socket *websocket.Conn, room *Room, userId int, charaId int) *Cli
 	// キャラの初期位置設定
 	width := (room.size - 1) / 2
 	num := len(room.clients)
-	initCharaX := num / width
-	initCharaY := num % width
+	initCharaX := ((1 + 2 * (num / width)) * 32) + 16
+	initCharaY := ((1 + 2 * (num % width)) * 32) + 16
 	charaPoint := &Point{
 		x: initCharaX,
 		y: initCharaY,

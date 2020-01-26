@@ -21,11 +21,21 @@ let BattleScene = new Phaser.Class ({
      */
     init: function(data) {
         console.log("battle scene init");
-        // debug
+        // 前画面からのデータ
         this.mapSize = data.map_size;
         this.roomId = data.room_id;
         this.selectedCharaNum = data.chara_id;
-        // キーボード
+        // cookieからユーサIDの取得
+        this.userId = 0;
+        let cookies = document.cookie;
+        let cookiesArray = cookies.split(';');
+        if (cookiesArray.length == 1) {
+            let cArray = cookiesArray[0].split('=');
+            if (cArray[0] == 'BombmanUserId') {
+                this.userId = cArray[1];
+            }
+        }
+// キーボード
         this.cursors = null;
         // 設定変数群
         this.bommerSettings = [
@@ -54,6 +64,23 @@ let BattleScene = new Phaser.Class ({
         // アセット群
         this.tilemap = null;
         this.layer = null;
+        // socket通信
+        let hostname = "localhost:8080"
+        this.socket = new WebSocket("ws://" + hostname + "/ws/" + this.roomId);
+        // socketが閉じたときのイベントリスナー
+        this.socket.onclose = function() {
+            alert("接続が終了しました");
+        }.bind(this);
+        // メッセージを受けたときのイベントリスナー
+        this.socket.onmessage = function(event) {
+            // debug
+            console.log(this.mapSize);
+            console.log(event.data);
+        }.bind(this);
+        // socketでエラーが発生したときののイベントリスナー
+        // this.socket.onerror = function() {}
+        // socketを開いたときのイベントリスナー
+        // this.socket.onopen = function() {}
     },
     /**
      * シーンに使用するアセットの読み込み。シーン実行時に実行される
@@ -163,21 +190,53 @@ let BattleScene = new Phaser.Class ({
             this.charaObjects[this.playerObjNum].setY(playerY - diff);
             this.charaObjects[this.playerObjNum].setX(playerX - this.speed);
             this.objectsDirection[this.playerObjNum] = this.leftDirection;
+            // socketにメッセージを送信
+            let sendData = {
+                id: this.userId,
+                action: "move",
+                x: playerX,
+                y: playerY
+            }
+            this.socket.send(JSON.stringify(sendData));
         } else if (this.cursors.right.isDown && !this.isCollision(playerX, playerY, (playerX + this.speed), playerY, this.map)) {
             let diff = (playerY % 32) - 16;
             this.charaObjects[this.playerObjNum].setY(playerY - diff);
             this.charaObjects[this.playerObjNum].setX(playerX + this.speed);
             this.objectsDirection[this.playerObjNum] = this.rightDirection;
+            // socketにメッセージを送信
+            let sendData = {
+                id: this.userId,
+                action: "move",
+                x: playerX,
+                y: playerY
+            }
+            this.socket.send(JSON.stringify(sendData));
         } else if (this.cursors.up.isDown && !this.isCollision(playerX, playerY, playerX, (playerY - this.speed), this.map)) {
             let diff = (playerX % 32) - 16;
             this.charaObjects[this.playerObjNum].setX(playerX - diff);
             this.charaObjects[this.playerObjNum].setY(playerY - this.speed);
             this.objectsDirection[this.playerObjNum] = this.upDirection;
+            // socketにメッセージを送信
+            let sendData = {
+                id: this.userId,
+                action: "move",
+                x: playerX,
+                y: playerY
+            }
+            this.socket.send(JSON.stringify(sendData));
         } else if (this.cursors.down.isDown && !this.isCollision(playerX, playerY, playerX, (playerY + this.speed), this.map)) {
             let diff = (playerX % 32) - 16;
             this.charaObjects[this.playerObjNum].setX(playerX - diff);
             this.charaObjects[this.playerObjNum].setY(playerY + this.speed);
             this.objectsDirection[this.playerObjNum] = this.downDirection;
+            // socketにメッセージを送信
+            let sendData = {
+                id: this.userId,
+                action: "move",
+                x: playerX,
+                y: playerY
+            }
+            this.socket.send(JSON.stringify(sendData));
         }
         if (Phaser.Input.Keyboard.JustDown(this.cursors.space) && !this.isPlayerSetBomb) {
             let pointX = Math.floor(playerX / 32);

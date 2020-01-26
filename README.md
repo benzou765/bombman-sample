@@ -141,6 +141,8 @@ phaser3でui作成のためのライブラリ
 * https://github.com/rexrainbow/phaser3-rex-notes
 webpack (今回は使用しないが、どこかで覚える必要はありそう)
 * https://qiita.com/koedamon/items/3e64612d22f3473f36a4
+bindの使い方
+http://enlosph.hatenablog.com/entry/2017/01/20/222605
 
 ## 素材サイト
 * ぴぽや

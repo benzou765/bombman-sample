@@ -3,7 +3,6 @@ package socket
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"strconv"
 	"unsafe"
 
@@ -36,14 +35,16 @@ type Room struct {
 	clients map[*Client]bool
 	// 部屋の大きさ
 	size int
+	// Echoフレームワーク
+	echo *echo.Echo
 }
 
 // 通信上のJson構造体
 type Talk struct {
-	User_id int    `json:"id"`
-	Action  string `json:"action"` // start, move, set_bomb, exp_bomb, dead のいずれか
-	X       int    `json:"x"`
-	Y       int    `json:"y"`
+	User_id int    `json:"id,int"`
+	Action  string `json:"action,string"` // start, move, set_bomb, exp_bomb, dead のいずれか
+	X       int    `json:"x,int"`
+	Y       int    `json:"y,int"`
 }
 
 // websocketのメッセージバッファ
@@ -68,7 +69,7 @@ func (rm *RoomManager) GetRoom(roomId int) (*Room, error) {
 	return nil, errors.New("The room is not exist!!")
 }
 
-func (rm *RoomManager) CreateRoom(conn *models.DbConnection, size int) *Room {
+func (rm *RoomManager) CreateRoom(conn *models.DbConnection, size int, echo *echo.Echo) *Room {
 	// 部屋情報をDBに保存
 	var roomModel *models.Room
 	roomModel = new(models.Room)
@@ -81,6 +82,7 @@ func (rm *RoomManager) CreateRoom(conn *models.DbConnection, size int) *Room {
 		leave:   make(chan *Client),
 		clients: make(map[*Client]bool),
 		size:    size,
+		echo:    echo,
 	}
 	rm.rooms[roomModel.Id] = room
 	return room
@@ -103,7 +105,7 @@ func (r *Room) Run() {
 			// 送信内容の解析と書き込み
 			var talk Talk
 			if err := json.Unmarshal(msg, &talk); err != nil {
-				log.Fatal(err)
+				r.echo.Logger.Error(err)
 			}
 			retMsg := "{\"user_id\":" + strconv.Itoa(talk.User_id) + ", \"action\":\"" + talk.Action + "\", \"x\":\"" + strconv.Itoa(talk.X) + "\", \"y\":\"" + strconv.Itoa(talk.Y) + "\"}"
 			byteMsg := *(*[]byte)(unsafe.Pointer(&retMsg))
