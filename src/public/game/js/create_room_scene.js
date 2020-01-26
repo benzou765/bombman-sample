@@ -165,7 +165,10 @@ let CreateRoomScene = new Phaser.Class ({
                     case 5:
                     case 6:
                     case 7:
-                        // 部屋作成APIの呼び出し関数
+                        /**
+                         * 部屋作成APIの呼び出し関数
+                         * @param {Phaser.Scene} scene この関数を呼び出しているシーン
+                         */
                         async function postCreateRoom(scene) {
                             // cookieの取得
                             let userId = 0;
@@ -185,13 +188,17 @@ let CreateRoomScene = new Phaser.Class ({
                                 "Content-Type": "application/json"
                             };
                             let jsonBody = JSON.stringify({"chara_id": scene.selectedCharaNum, "size": scene.roomSettings[scene.roomSizeSelectNum].size});
-                            console.log(jsonBody);
-                            let response = await fetch("/rooms/create", {method: method, headers: headers, body: jsonBody})
-                            .then((res) => {
+                            let response = await fetch("/rooms/create", {
+                                method: method,
+                                headers: headers,
+                                body: jsonBody
+                            })
+                            .then(res => {
                                 return res.json();
                             })
                             .catch(err => {
                                 console.log("Error!!");
+                                console.log(err)
                             });
                             scene.roomId = response.room_id;
                             // モーダルウィンドウの表示準備
