@@ -49,10 +49,12 @@ func CreateRoom(c echo.Context) error {
 	// cookie からIDを取得
 	cookie, err := c.Cookie("BombmanUserId")
 	if err != nil {
+		c.Echo().Logger.Error(err)
 		c.String(http.StatusUnauthorized, "Unauthorized")
 	}
 	userId, err := strconv.Atoi(cookie.Value)
 	if err != nil {
+		c.Echo().Logger.Error(err)
 		return c.HTML(http.StatusForbidden, "<strong>Forbidden</strong>")
 	}
 
@@ -60,11 +62,13 @@ func CreateRoom(c echo.Context) error {
 	reqData := new(RequestCreateRoom)
 	err = c.Bind(reqData)
 	if err != nil {
+		c.Echo().Logger.Error(err)
 		return c.HTML(http.StatusForbidden, "<strong>Forbidden</strong>")
 	}
 	// ログイン処理
 	user := models.FindUser(dbConn, userId)
 	if user == nil {
+		c.Echo().Logger.Error(err)
 		return c.HTML(http.StatusForbidden, "<strong>Forbidden</strong>")
 	}
 	user.Chara_id = reqData.CharaId
@@ -87,15 +91,18 @@ func ShowRoom(c echo.Context) error {
 	// cookie からIDを取得
 	cookie, err := c.Cookie("BombmanUserId")
 	if err != nil {
+		c.Echo().Logger.Error(err)
 		c.String(http.StatusUnauthorized, "Unauthorized")
 	}
 	userId, err := strconv.Atoi(cookie.Value)
 	if err != nil {
+		c.Echo().Logger.Error(err)
 		return c.HTML(http.StatusForbidden, "<strong>Forbidden</strong>")
 	}
 	// ログイン処理
 	user := models.FindUser(dbConn, userId)
 	if user == nil {
+		c.Echo().Logger.Error(err)
 		return c.HTML(http.StatusForbidden, "<strong>Forbidden</strong>")
 	}
 	user.UpdateChara(dbConn)
@@ -129,22 +136,33 @@ func ConnectWebSocket(c echo.Context) error {
 	// cookie からIDを取得
 	cookie, err := c.Cookie("BombmanUserId")
 	if err != nil {
+		c.Echo().Logger.Error(err)
 		c.String(http.StatusUnauthorized, "Unauthorized")
 	}
 	userId, err := strconv.Atoi(cookie.Value)
 	if err != nil {
+		c.Echo().Logger.Error(err)
 		return c.HTML(http.StatusForbidden, "<strong>Forbidden</strong>")
 	}
 	// ログイン処理
 	user := models.FindUser(dbConn, userId)
 	if user == nil {
+		c.Echo().Logger.Error(err)
 		return c.HTML(http.StatusForbidden, "<strong>Forbidden</strong>")
 	}
 	user.UpdateChara(dbConn)
 
 	// 部屋へ入室
 	roomId, err := strconv.Atoi(c.Param("id"))
-	room := roomManager.GetRoom(roomId)
+	if err != nil {
+		c.Echo().Logger.Error(err)
+		return c.HTML(http.StatusForbidden, "<strong>Forbidden</strong>")
+	}
+	room, err := roomManager.GetRoom(roomId)
+	if err != nil {
+		c.Echo().Logger.Error(err)
+		return c.HTML(http.StatusForbidden, "<strong>Forbidden</strong>")
+	}
 
 	room.EnterRoom(c, user.Id, user.Chara_id, dbConn)
 	return nil

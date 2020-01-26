@@ -60,8 +60,12 @@ func New(e *echo.Echo) *RoomManager {
 	}
 }
 
-func (rm *RoomManager) GetRoom(roomId int) *Room {
-	return rm.rooms[roomId]
+func (rm *RoomManager) GetRoom(roomId int) (*Room, error) {
+	room, exist := rm.rooms[roomId]
+	if exist {
+		return room, nil
+	}
+	return nil, errors.New("The room is not exist!!")
 }
 
 func (rm *RoomManager) CreateRoom(conn *models.DbConnection, size int) *Room {
