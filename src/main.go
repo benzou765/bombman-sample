@@ -39,7 +39,7 @@ func setRoute(e *echo.Echo) {
 	e.Static("/js", "public/game/js")
 	e.Static("/img", "public/game/img")
 	e.POST("/login", controllers.LoginPost)
-	e.POST("/update", controllers.UpdateCharaId)
+	e.POST("/user/update", controllers.UpdateCharaId)
 	e.POST("/rooms/create", controllers.CreateRoom)
 	e.GET("/rooms", controllers.ShowRoom)
 	e.GET("/ws/:id", controllers.ConnectWebSocket)
