@@ -22,8 +22,8 @@ let BattleScene = new Phaser.Class ({
     init: function(data) {
         console.log("battle scene init");
         // debug
-        this.mapSize = 21;
-        this.roomId = 1;
+        this.mapSize = data.map_size;
+        this.roomId = data.room_id;
         this.selectedCharaNum = data.chara_id;
         // キーボード
         this.cursors = null;

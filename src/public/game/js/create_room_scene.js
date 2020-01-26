@@ -131,7 +131,7 @@ let CreateRoomScene = new Phaser.Class ({
             // モーダル表示時の操作
             // 決定処理
             if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
-                let sendData = { chara_id: this.selectedCharaNum};
+                let sendData = { chara_id: this.selectedCharaNum, map_size: this.roomSettings[this.roomSizeSelectNum].size, room_id: this.roomId };
                 this.scene.stop();
                 this.scene.start("battle", sendData);
             }
