@@ -3,15 +3,10 @@ package socket
 import (
 	"encoding/json"
 	"errors"
-	"strconv"
-	"unsafe"
-
 	// echo
 	"github.com/labstack/echo"
-
 	// websocket
 	"github.com/gorilla/websocket"
-
 	// local packages
 	"../models"
 )
@@ -19,7 +14,6 @@ import (
 // 部屋管理の構造体
 type RoomManager struct {
 	rooms  map[int]*Room
-	logger echo.Logger
 }
 
 // 部屋の構造体
@@ -32,7 +26,7 @@ type Room struct {
 	// チャットルームから退出しようとしているクライアントのためのチャネル
 	leave chan *Client
 	// 在室しているクライアントを保持
-	clients map[*Client]bool
+	clients map[int]*Client
 	// 部屋の大きさ
 	size int
 	// Echoフレームワーク
@@ -41,10 +35,21 @@ type Room struct {
 
 // 通信上のJson構造体
 type Talk struct {
-	User_id int    `json:"id,int"`
-	Action  string `json:"action,string"` // start, move, set_bomb, exp_bomb, dead のいずれか
-	X       int    `json:"x,int"`
-	Y       int    `json:"y,int"`
+	User_id   int    `json:"user_id,int"`
+	Action    string `json:"action"` // start, move, set_bomb, exp_bomb, dead のいずれか
+	Direction int    `json:"direction,int"` // 0:down, 1:left, 2:right, 3:up
+	X         int    `json:"x,int"`
+	Y         int    `json:"y,int"`
+}
+
+// 初回のキャラ作成時のJson構造体
+type InitTalk struct {
+	User_id   int    `json:"user_id,int"`
+	Action    string `json:"action"` // start, move, set_bomb, exp_bomb, dead のいずれか
+	Chara_id  int    `json:"chara_id,int"`
+	Direction int    `json:"direction,int"` // 0:down, 1:left, 2:right, 3:up
+	X         int    `json:"x,int"`
+	Y         int    `json:"y,int"`
 }
 
 // websocketのメッセージバッファ
@@ -57,7 +62,6 @@ var upgrader = &websocket.Upgrader{
 func New(e *echo.Echo) *RoomManager {
 	return &RoomManager{
 		rooms:  make(map[int]*Room),
-		logger: e.Logger,
 	}
 }
 
@@ -80,7 +84,7 @@ func (rm *RoomManager) CreateRoom(conn *models.DbConnection, size int, echo *ech
 		forward: make(chan []byte),
 		join:    make(chan *Client),
 		leave:   make(chan *Client),
-		clients: make(map[*Client]bool),
+		clients: make(map[int]*Client),
 		size:    size,
 		echo:    echo,
 	}
@@ -89,45 +93,136 @@ func (rm *RoomManager) CreateRoom(conn *models.DbConnection, size int, echo *ech
 }
 
 // ルーム内での処理
-func (r *Room) Run() {
+func (r *Room) Run(conn *models.DbConnection) {
 	for {
 		select {
-		case client := <-r.join:
+		case client := <- r.join:
 			// 参加
-			r.clients[client] = true
-			// 入室情報の書き込み
-		case client := <-r.leave:
-			// 退出情報の書き込み
-			// 退出
-			delete(r.clients, client)
-			close(client.send)
-		case msg := <-r.forward:
+			r.clients[client.chara.id] = client
+
+			// 全クライアントに新規クライアントの情報を送信
+			for _, roomClient := range r.clients {
+				var initTalk *InitTalk
+				// キャラの状態を送信
+				initTalk = &InitTalk{
+					User_id:   client.chara.id,
+					Action:    "start",
+					Chara_id:  client.chara.charaId,
+					Direction: client.chara.direction,
+					X:         client.chara.charaPoint.x,
+					Y:         client.chara.charaPoint.y,
+				}
+				byteMsg, err := json.Marshal(initTalk)
+				if err != nil {
+					r.echo.Logger.Error(err)
+				} else {
+					roomClient.send <- byteMsg
+				}
+			}
+			// 新規クライアントにほかクライアントの情報を送信
+			for _, roomClient := range r.clients {
+				var initTalk *InitTalk
+				// キャラの状態を送信
+				initTalk = &InitTalk{
+					User_id:   roomClient.chara.id,
+					Action:    "start",
+					Chara_id:  roomClient.chara.charaId,
+					Direction: roomClient.chara.direction,
+					X:         roomClient.chara.charaPoint.x,
+					Y:         roomClient.chara.charaPoint.y,
+				}
+				byteMsg, err := json.Marshal(initTalk)
+				if err != nil {
+					r.echo.Logger.Error(err)
+				} else {
+					client.send <- byteMsg
+				}
+				// 爆弾の状態を送信
+				if roomClient.chara.expTime != nil {
+					var talk *Talk
+					talk = &Talk{
+						User_id:   roomClient.chara.id,
+						Action:    "set_bomb",
+						Direction: 0,
+						X:         roomClient.chara.bombPoint.x,
+						Y:         roomClient.chara.bombPoint.y,
+					}
+					byteMsg, err = json.Marshal(talk)
+					if err != nil {
+						r.echo.Logger.Error(err)
+					} else {
+						client.send <- byteMsg
+					}
+				}
+			}
+			// 部屋状態の更新
+			roomModel := models.FindRoom(conn, r.id)
+			roomModel.AddMember(conn, client.chara.id)
+		case client := <- r.leave:
+			r.ExitRoom(client, conn)
+		case msg := <- r.forward:
 			// 送信内容の解析と書き込み
 			var talk Talk
 			if err := json.Unmarshal(msg, &talk); err != nil {
 				r.echo.Logger.Error(err)
 			}
-			retMsg := "{\"user_id\":" + strconv.Itoa(talk.User_id) + ", \"action\":\"" + talk.Action + "\", \"x\":\"" + strconv.Itoa(talk.X) + "\", \"y\":\"" + strconv.Itoa(talk.Y) + "\"}"
-			byteMsg := *(*[]byte)(unsafe.Pointer(&retMsg))
+			retMsg := &Talk{
+				User_id:   talk.User_id,
+				Action:    talk.Action,
+				Direction: talk.Direction,
+				X:         talk.X,
+				Y:         talk.Y,
+			}
+			retByteMsg, _ := json.Marshal(retMsg)
 
 			// すべてのクライアントにメッセージを送信
-			for client := range r.clients {
+			for _, client := range r.clients {
+				if client.chara.id == talk.User_id {
+					switch talk.Action {
+					case "move":
+						// キャラの座標を更新
+						client.UpdateCharaPoint(talk.X, talk.Y, talk.Direction)
+					case "set_bomb":
+						// 爆弾の時限設定
+						client.SetTimer()
+						// 爆発時のメッセージを生成
+						expMsg := &Talk{
+							User_id:   talk.User_id,
+							Action:    "exp_bomb",
+							Direction: 0,
+							X:         talk.X,
+							Y:         talk.Y,
+						}
+						expByteMsg, _ := json.Marshal(expMsg)
+						// 爆弾の時限監視
+						go client.TimerBomb(expByteMsg)
+					case "exp_bomb":
+						// 爆発時の処理
+					case "dead":
+						// 死亡時の処理
+					}
+				}
+
 				select {
-				case client.send <- byteMsg:
+				case client.send <- retByteMsg:
 					// メッセージを送信
 				default:
 					// 送信に失敗
-					delete(r.clients, client)
-					close(client.send)
+					r.ExitRoom(client, conn)
 				}
 			}
 		}
 	}
 }
 
-// クライアントの退出
-func leaveClient(r *Room, c *Client) {
-	r.leave <- c
+// 部屋離脱時の処理
+func (r *Room) ExitRoom(client *Client, conn *models.DbConnection) {
+	// 部屋状態の更新
+	roomModel := models.FindRoom(conn, r.id)
+	roomModel.DeleteMember(conn, client.chara.id)
+	// 退出
+	delete(r.clients, client.chara.id)
+	close(client.send)
 }
 
 // ルームの使用開始
@@ -136,57 +231,24 @@ func (r *Room) EnterRoom(c echo.Context, userId int, charaId int, conn *models.D
 	width := (r.size - 1) / 2
 	maxNum := width * width
 	if len(r.clients) > maxNum {
+		r.echo.Logger.Error("The room is over capacity!")
 		return errors.New("The room is over capacity!")
 	}
 
 	// WebSocketの準備
 	socket, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
-		return err
+		r.echo.Logger.Error(err)
+		return nil
 	}
 	client := NewClient(socket, r, userId, charaId)
 	r.join <- client
+	// socketでエラーが発生した場合の処理
 	defer func() { r.leave <- client }()
+
+	// socketによる送受信の開始
 	go client.Write()
 	client.Read()
-
-	// 現在の部屋状態を送信
-	for client, exist := range r.clients {
-		if exist {
-			var talk Talk
-			// キャラの状態を送信
-			talk = Talk{
-				User_id: client.chara.id,
-				Action:  "start",
-				X:       client.chara.charaPoint.x,
-				Y:       client.chara.charaPoint.y,
-			}
-			msg, err := json.Marshal(talk)
-			if err != nil {
-				return err
-			}
-			r.forward <- msg
-			// 爆弾の状態を送信
-			if client.chara.expTime != -1 {
-				talk = Talk{
-					User_id: client.chara.id,
-					Action:  "set_bomb",
-					X:       client.chara.bombPoint.x,
-					Y:       client.chara.bombPoint.y,
-				}
-				msg, err = json.Marshal(talk)
-				if err != nil {
-					return err
-				}
-				r.forward <- msg
-
-			}
-		}
-	}
-
-	// DBへの保存
-	roomModel := models.FindRoom(conn, r.id)
-	roomModel.AddRoom(conn, userId)
 
 	return nil
 }
@@ -200,14 +262,8 @@ func (rm *RoomManager) CleanRoom(conn *models.DbConnection) {
 	// Clientの確認
 	var deleteRooms []*Room
 	for _, room := range rm.rooms {
-		isDelete := true
-		for _, exist := range room.clients {
-			if exist {
-				isDelete = false
-				break
-			}
-		}
-		if isDelete {
+		clientNum := len(room.clients)
+		if clientNum == 0 {
 			deleteRooms = append(deleteRooms, room)
 		}
 	}

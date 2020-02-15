@@ -12,7 +12,6 @@ let CreateRoomScene = new Phaser.Class ({
      * @param object config
      */
     initialize: function CreateRoomScene(config) {
-        console.log("create room scene initialize");
         Phaser.Scene.call(this, config); // 親クラスのコンストラクタの呼び出し
     },
     /**
@@ -21,7 +20,6 @@ let CreateRoomScene = new Phaser.Class ({
      */
     init: function(data)
     {
-        console.log("create room scene init");
         // 前シーンからのデータ取得
         this.selectedCharaNum = data.chara_id;
         // キーボード
@@ -60,7 +58,6 @@ let CreateRoomScene = new Phaser.Class ({
      * シーンに使用するアセットの読み込み。シーン実行時に実行される
      */
     preload: function() {
-        console.log("create room scene preload");
         let id = this.selectedCharaNum;
         this.load.spritesheet(this.bommerSettings[id].key, this.bommerSettings[id].path, { frameWidth:32, frameHeight: 32, startFrame: 0, endFrame: 11});
     },
@@ -131,7 +128,7 @@ let CreateRoomScene = new Phaser.Class ({
             // モーダル表示時の操作
             // 決定処理
             if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
-                let sendData = { chara_id: this.selectedCharaNum, map_size: this.roomSettings[this.roomSizeSelectNum].size, room_id: this.roomId };
+                let sendData = { chara_id: this.selectedCharaNum, map_size: this.roomSettings[this.roomSizeSelectNum].size, room_id: this.roomId, num: 0};
                 this.scene.stop();
                 this.scene.start("battle", sendData);
             }

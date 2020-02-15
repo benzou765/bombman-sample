@@ -15,6 +15,10 @@ type Room struct {
 	Updated_at string
 }
 
+type RoomMembers struct {
+	Members []int `json:"members"`
+}
+
 const (
 	tableRoom = "room"
 )
@@ -23,9 +27,12 @@ const (
 func (room *Room) Insert(conn *DbConnection, size int) {
 	var err error
 	now := time.Now()
-	members := "{\"members\":[]}"
+	var roomMembers RoomMembers
+	roomMembers.Members = []int{}
+	byteMembers, _ := json.Marshal(roomMembers)
+
 	// insert
-	_, err = conn.GetSession().InsertInto(tableRoom).Columns("size", "members", "created_at", "updated_at").Values(size, members, now, now).Exec()
+	_, err = conn.GetSession().InsertInto(tableRoom).Columns("size", "members", "created_at", "updated_at").Values(size, string(byteMembers), now, now).Exec()
 	if err != nil {
 		conn.GetEcho().Logger.Error(err)
 	}
@@ -49,27 +56,64 @@ func FindRoom(conn *DbConnection, id int) *Room {
 	return &room
 }
 
-func (room *Room) AddRoom(conn *DbConnection, userId int) {
-	// members変数にuserIdを追加
-	var users []int
-	err := json.Unmarshal([]byte(room.Members), &users)
+func (room *Room) AddMember(conn *DbConnection, userId int) {
+		// members変数にuserIdを追加
+	var roomMembers RoomMembers
+	err := json.Unmarshal([]byte(room.Members), &roomMembers)
 	if err != nil {
-		conn.GetEcho().Logger.Info(err)
+		conn.GetEcho().Logger.Error(err)
 	}
-	conn.GetEcho().Logger.Info(users)
-	users = append(users, userId)
-	users_str, _ := json.Marshal(&users)
-	room.Members = string(users_str)
+	roomMembers.Members = append(roomMembers.Members, userId)
+	byteMembers, _ := json.Marshal(roomMembers)
 
 	// レコードの更新
 	now := time.Now()
-	attrsMap := map[string]interface{}{"members": room.Members, "updated_at": now}
+	attrsMap := map[string]interface{}{"members": string(byteMembers), "updated_at": now}
 	_, err = conn.GetSession().Update(tableRoom).SetMap(attrsMap).Where("id = ?", room.Id).Exec()
 	if err != nil {
 		conn.GetEcho().Logger.Error(err)
 	}
 }
 
+func (room *Room) DeleteMember(conn *DbConnection, userId int) {
+	// members変数にuserIdを追加
+	var roomMembers RoomMembers
+	err := json.Unmarshal([]byte(room.Members), &roomMembers)
+	if err != nil {
+		conn.GetEcho().Logger.Error(err)
+	}
+	roomMembers.Members = removeArray(roomMembers.Members, userId)
+	byteMembers, _ := json.Marshal(&roomMembers)
+
+	// レコードの更新
+	now := time.Now()
+	attrsMap := map[string]interface{}{"members": byteMembers, "updated_at": now}
+	_, err = conn.GetSession().Update(tableRoom).SetMap(attrsMap).Where("id = ?", room.Id).Exec()
+	if err != nil {
+		conn.GetEcho().Logger.Error(err)
+	}
+}
+
+// int型のsliceからsearchを削除
+func removeArray(arrayInt []int, search int) []int {
+	var result []int
+	for _, val := range arrayInt {
+		if val != search {
+			result = append(result, val)
+		}
+	}
+	return result
+}
+
+func (room *Room) GetMembers(conn *DbConnection) []int {
+	var roomMembers RoomMembers
+	err := json.Unmarshal([]byte(room.Members), &roomMembers)
+	if err != nil {
+		conn.GetEcho().Logger.Error(err)
+	}
+	return roomMembers.Members
+}
+	
 func GetAllRoom(conn *DbConnection) []Room {
 	var rooms []Room
 	conn.GetSession().Select("*").From(tableRoom).Load(&rooms)

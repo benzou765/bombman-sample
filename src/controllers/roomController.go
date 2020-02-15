@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -29,10 +28,6 @@ type RoomInfo struct {
 	Size int `json:"size,int"`
 	// 現在の人数
 	Num int `json:"num,int"`
-}
-
-type RoomMembers struct {
-	Members []int `json"members"`
 }
 
 type ResponseShowRoom struct {
@@ -79,7 +74,7 @@ func CreateRoom(c echo.Context) error {
 
 	// 部屋の作成
 	room := roomManager.CreateRoom(dbConn, reqData.Size, c.Echo())
-	go room.Run()
+	go room.Run(dbConn)
 
 	response := &ResponseCreateRoom{
 		RoomId: room.GetId(),
@@ -111,16 +106,11 @@ func ShowRoom(c echo.Context) error {
 	rooms := models.GetAllRoom(dbConn)
 	infos := make([]*RoomInfo, 0)
 	for _, room := range rooms {
-		var roomMembers RoomMembers
-		err := json.Unmarshal([]byte(room.Members), &roomMembers)
-		if err != nil {
-			c.Echo().Logger.Error(err)
-			return c.HTML(http.StatusInternalServerError, "<strong>InternalServerError</strong>")
-		}
+		members := room.GetMembers(dbConn)
 		info := &RoomInfo{
 			Id:   room.Id,
 			Size: room.Size,
-			Num:  len(roomMembers.Members),
+			Num: members,
 		}
 		infos = append(infos, info)
 
@@ -164,6 +154,5 @@ func ConnectWebSocket(c echo.Context) error {
 		return c.HTML(http.StatusForbidden, "<strong>Forbidden</strong>")
 	}
 
-	room.EnterRoom(c, user.Id, user.Chara_id, dbConn)
-	return nil
+	return room.EnterRoom(c, user.Id, user.Chara_id, dbConn)
 }

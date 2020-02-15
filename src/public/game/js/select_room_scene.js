@@ -12,7 +12,6 @@ let SelectRoomScene = new Phaser.Class ({
      * @param object config
      */
     initialize: function SelectRoomScene(config) {
-        console.log("select room scene initialize");
         Phaser.Scene.call(this, config); // 親クラスのコンストラクタの呼び出し
     },
     /**
@@ -20,9 +19,8 @@ let SelectRoomScene = new Phaser.Class ({
      * @param object data
      */
     init: function(data) {
-        console.log("select room scene init");
         // 通信で取得するデータ
-        this.rooms = [];
+        this.rooms = []; // { id:0, size:0, num:0 }
         // 前シーンからのデータ取得
         this.selectedCharaNum = data.chara_id;
         // キーボード
@@ -49,7 +47,6 @@ let SelectRoomScene = new Phaser.Class ({
      * シーンに使用するアセットの読み込み。シーン実行時に実行される
      */
     preload: function() {
-        console.log("select room scene preload");
         let id = this.selectedCharaNum;
         this.load.spritesheet(this.bommerSettings[id].key, this.bommerSettings[id].path, { frameWidth: 32, frameHeight: 32, startFrame:0, endFrame: 11});
         // スクロールプラグインの追加
@@ -81,11 +78,15 @@ let SelectRoomScene = new Phaser.Class ({
      * @param object data
      */
     create: function() {
-        console.log("select room scene create");
         // 背景色の設定
         this.cameras.main.setBackgroundColor(0xecf4f3);
         // 部屋情報の設定
-        this.rooms = this.cache.json.get('showRooms').room_info;
+        let roomInfo = this.cache.json.get('showRooms').room_info;
+        if (roomInfo !== undefined) {
+            this.rooms = roomInfo
+        } else {
+            this.rooms = [];
+        }
         // タイトルテキスト
         this.add.text(20, 20, "部屋を選択する").setFontSize(32).setColor("#34675c");
         // 前画面に戻るテキスト
@@ -205,19 +206,17 @@ let SelectRoomScene = new Phaser.Class ({
                 this.roomTexts[this.selectRoomNum].setBackgroundColor("#76dbd1");
                 let scrollPer = this.selectRoomNum / this.roomTexts.length;
                 this.scrollablePanel.setT(scrollPer);
-                console.log(this.scrollablePanel.t);
             } else if (Phaser.Input.Keyboard.JustDown(this.cursors.down) && !this.selectBack && this.selectRoomNum < (this.roomTexts.length - 1) ) {
                 this.roomTexts[this.selectRoomNum].setBackgroundColor(null);
                 this.selectRoomNum += 1;
                 this.roomTexts[this.selectRoomNum].setBackgroundColor("#76dbd1");
                 let scrollPer = this.selectRoomNum / (this.roomTexts.length - 1);
                 this.scrollablePanel.setT(scrollPer);
-                console.log(this.scrollablePanel.t);
             }
             // 決定処理
             if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) {
-                let sendData = { chara_id: this.selectedCharaNum};
                 if (this.selectBack) {
+                    let sendData = { chara_id: this.selectedCharaNum };
                     this.scene.stop();
                     this.scene.start("selectChara", sendData);
                 } else {
@@ -253,11 +252,12 @@ let SelectRoomScene = new Phaser.Class ({
                             return res.json();
                         })
                         .catch(err => {
-                            console.log("Error!!");
                             console.log(err);
+                            alert("/user/update の呼び出しに失敗");
                         });
                     }
                     postUpdateUser(this);
+                    let sendData = { chara_id: this.selectedCharaNum, map_size: this.rooms[this.selectRoomNum].size, room_id: this.rooms[this.selectRoomNum].id, num: this.rooms[this.selectRoomNum].num }
                     this.scene.stop();
                     this.scene.start("battle", sendData);
                 }

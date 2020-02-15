@@ -12,7 +12,6 @@ let SelectCharaScene = new Phaser.Class ({
      * @param object config
      */
     initialize: function SelectCharaScene(config) {
-        console.log("select chara scene initialize");
         Phaser.Scene.call(this, config); // 親クラスのコンストラクタの呼び出し
     },
     /**
@@ -20,7 +19,6 @@ let SelectCharaScene = new Phaser.Class ({
      * @param object data
      */
     init: function(data) {
-        console.log("select chara scene init");
         // キーボード
         this.cursors = null;
         // 設定変数群
@@ -53,7 +51,6 @@ let SelectCharaScene = new Phaser.Class ({
      * シーンに使用するアセットの読み込み。シーン実行時に実行される
      */
     preload: function() {
-        console.log("select chara scene preload");
         // アセットのロード
         this.load.spritesheet('Bomb', 'img/bomb.png', { frameWidth: 32, frameHeight: 32, startFrame: 0, endFrame: 5});
         for (let i = 0; i < this.bommerSettings.length; i++) {
@@ -65,7 +62,6 @@ let SelectCharaScene = new Phaser.Class ({
      * @param object data
      */
     create: function(data) {
-        console.log("select chara scene create");
         // 背景色
         this.cameras.main.setBackgroundColor("#ecf4f3");
         // タイトルテキスト

@@ -1,6 +1,8 @@
 package socket
 
 import (
+	"time"
+	// websocket
 	"github.com/gorilla/websocket"
 )
 
@@ -22,8 +24,10 @@ type Character struct {
 	charaId int
 	// キャラの座標
 	charaPoint *Point
-	// 爆弾爆発までの時間 (-1は未設置)
-	expTime int
+	// キャラの向き 0:down、1:left、2:right、3:up
+	direction int
+	// 爆弾爆発までの時間
+	expTime *time.Timer
 	// 爆弾の座標
 	bombPoint *Point
 }
@@ -38,8 +42,8 @@ func NewClient(socket *websocket.Conn, room *Room, userId int, charaId int) *Cli
 	// キャラの初期位置設定
 	width := (room.size - 1) / 2
 	num := len(room.clients)
-	initCharaX := ((1 + 2 * (num / width)) * 32) + 16
-	initCharaY := ((1 + 2 * (num % width)) * 32) + 16
+	initCharaX := ((1 + 2 * (num % width)) * 32) + 16
+	initCharaY := ((1 + 2 * (num / width)) * 32) + 16
 	charaPoint := &Point{
 		x: initCharaX,
 		y: initCharaY,
@@ -56,7 +60,8 @@ func NewClient(socket *websocket.Conn, room *Room, userId int, charaId int) *Cli
 		id:         userId,
 		charaId:    charaId,
 		charaPoint: charaPoint,
-		expTime:    -1,
+		direction:  0,
+		expTime:    nil,
 		bombPoint:  bombPoint,
 	}
 
@@ -70,7 +75,7 @@ func NewClient(socket *websocket.Conn, room *Room, userId int, charaId int) *Cli
 	return client
 }
 
-// チャットルームに届いているメッセージを読み取る
+// socketに届いているメッセージを読み取る
 func (c *Client) Read() {
 	for {
 		if _, msg, err := c.socket.ReadMessage(); err == nil {
@@ -82,7 +87,7 @@ func (c *Client) Read() {
 	c.socket.Close()
 }
 
-// チャットルームにメッセージを送る
+// socketにメッセージを送る
 func (c *Client) Write() {
 	for msg := range c.send {
 		if err := c.socket.WriteMessage(websocket.TextMessage, msg); err != nil {
@@ -90,4 +95,22 @@ func (c *Client) Write() {
 		}
 	}
 	c.socket.Close()
+}
+
+func (c *Client) SetTimer() {
+	// 爆発までの時間
+	c.chara.expTime = time.NewTimer(1500 * time.Millisecond)
+}
+
+func (c *Client) TimerBomb(byteMsg []byte) {
+	<- c.chara.expTime.C
+	c.chara.expTime = nil
+	// 爆発メッセージの送信
+	c.room.forward <- byteMsg
+} 
+
+func (c *Client) UpdateCharaPoint(x int, y int, d int) {
+	c.chara.charaPoint.x = x
+	c.chara.charaPoint.y = y
+	c.chara.direction = d
 }

@@ -1,5 +1,7 @@
 data
-src/logs
 assets
 test/node_modules
 test/bin/cookie.txt
+src/logs/*
+!src/logs/.gitkeep
+ecr/go/app.tar.gz
